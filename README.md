@@ -5,7 +5,7 @@
 
 | Fitur | API 1: Send from Server (DCM4CHEE) | API 2: Upload & Send (Local File) |
 |-------|-----------------------------------|-----------------------------------|
-| Endpoint | POST /dicom/send-dcm | POST /dicom/upload-dcm |
+| Endpoint | POST /api/dicom/send-dcm | POST /api/dicom/upload-dcm |
 | Metode | POST | POST |
 | Content-Type | application/json | multipart/form-data |
 | Deskripsi | Mengambil file dari server dcm4chee berdasarkan UID (dcm4chee api), mengedit (dcmtk), dan mengirim ke router (dcmtk). | Menerima file .dcm dari komputer user, mengedit (dcmtk), dan mengirim ke router (dcmtk). |
