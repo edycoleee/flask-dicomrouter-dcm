@@ -1,0 +1,37 @@
+# Virtual environment
+.venv/
+venv/
+env/
+env__/
+
+# Byte-code files
+*.pyc
+__pycache__/
+
+# Flask instance folder
+instance/
+
+# Editor/IDE-specific files
+.idea/  # For PyCharm, IntelliJ, etc.
+.vscode/
+*.swp
+*.swo
+
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution and packaging
+dist/
+build/
+*.egg-info/
+
+# Environment variables (crucial for API keys and sensitive data)
+.env
+.flaskenv
+creds.py # Example sensitive data file
+
+# OS-generated files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  dicom-gateway:
+    build: .
+    container_name: dicom-gateway-app
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      # Mount folder untuk menyimpan log secara permanen di host
+      - ./app_dicom.log:/app/app_dicom.log
+    environment:
+      - PYTHONUNBUFFERED=1
