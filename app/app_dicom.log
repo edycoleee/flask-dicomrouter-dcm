@@ -1,0 +1,23 @@
+2026-01-06 08:49:30,941 - INFO - [SAVE] Mendownload file untuk disimpan lokal: 1.3.46.670589.30.39.0.1.966169802732.1704831346742.1
+2026-01-06 08:50:53,753 - INFO - [SAVE] Mendownload file untuk disimpan lokal: 1.3.46.670589.30.39.0.1.966169802732.1761205592562.1
+2026-01-06 08:52:09,846 - INFO - [DIRECT] Memulai proses Direct Send: 1.3.46.670589.30.39.0.1.966169802732.1758887630382.1
+2026-01-06 08:52:10,650 - INFO - File berhasil diunduh: direct_1.3.46.670589.30.39.0.1.966169802732.1758887630382.1.dcm (Size: 9997348 bytes)
+2026-01-06 08:54:25,524 - ERROR - ROUTER REJECTED: I: checking input files ...
+I: Requesting Association
+F: Association Request Failed: 0006:031c TCP Initialization Error: Connection timed out
+
+2026-01-06 08:54:25,524 - ERROR - FAILED: Router menolak file (Cek kemungkinan duplikasi UID atau Koneksi)
+2026-01-06 09:05:03,807 - INFO - [SAVE] Mendownload file ke temp: /tmp/dicom_gateway_tmp/1.3.46.670589.30.39.0.1.966169802732.1710329877779.1.dcm
+2026-01-06 09:05:04,712 - INFO - [CLEANUP] File temporary berhasil dihapus: /tmp/dicom_gateway_tmp/1.3.46.670589.30.39.0.1.966169802732.1710329877779.1.dcm
+2026-01-06 09:05:47,767 - INFO - [SYSTEM] Membersihkan 0 file di folder temporary.
+2026-01-06 09:06:13,447 - INFO - [DIRECT] Memulai proses Direct Send: 1.3.46.670589.30.39.0.1.966169802732.1710329877779.1
+2026-01-06 09:06:14,162 - INFO - File berhasil diunduh: direct_1.3.46.670589.30.39.0.1.966169802732.1710329877779.1.dcm (Size: 11168438 bytes)
+2026-01-06 09:06:15,069 - INFO - SUCCESS: Direct Send 1.3.46.670589.30.39.0.1.966169802732.1710329877779.1 Berhasil!
+2026-01-06 09:06:48,893 - INFO - [STEP 1] Mengambil Metadata dari DCM4CHEE untuk Study: 1.3.46.670589.30.39.0.1.966169802732.1710329877779.1
+2026-01-06 09:06:48,918 - INFO - Metadata didapat: Series=1.3.46.670589.30.39.0.1.966169802732.1710330424512.1, SOP=1.3.46.670589.30.39.0.1.966169802732.1710330424422.2
+2026-01-06 09:06:48,918 - INFO - [STEP 2] Downloading file DICOM via WADO...
+2026-01-06 09:06:49,602 - INFO - Download selesai: temp_1.3.46.670589.30.39.0.1.966169802732.1710329877779.1.dcm
+2026-01-06 09:06:49,602 - INFO - [STEP 3] Menjalankan dcmodify untuk PatientID:  P01372565542 & Acc: 202512300004
+2026-01-06 09:06:49,648 - INFO - Modifikasi metadata berhasil.
+2026-01-06 09:06:49,648 - INFO - [STEP 4] Mengirim ke Router 192.10.10.51:11112 via storescu
+2026-01-06 09:06:50,540 - INFO - SUCCESS: DICOM berhasil dikirim ke DCMROUTER

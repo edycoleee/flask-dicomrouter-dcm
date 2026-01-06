@@ -20,6 +20,13 @@ POST /api/dicom/direct-dcm	{ "study": "UID" }
 
 Relay murni: Download dari server PACS DCM4CHE langsung tembak ke dicomrouter.
 
+API 4
+
+POST	/save-dcm	{"study": "UID"}	Menarik file dari dcm4chee, menyimpannya di /tmp/..., mengirim ke browser, lalu menghapusnya.
+
+API 5
+
+DELETE	/clear-temp	 body : None	Menghapus semua file yang tersisa di folder temporary server.
 ```
 
 dcm4chee >> dcmtk >> dicom router
@@ -189,7 +196,7 @@ app = Flask(__name__)
  
 # Konfigurasi 
 DCM4CHEE_URL = "http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE" 
-ROUTER_IP = "192.10.10.28" 
+ROUTER_IP = "192.10.10.51" 
 ROUTER_PORT = "11112" 
 ROUTER_AET = "DCMROUTER" 
  

@@ -41,9 +41,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY app/ .
 
-# Pastikan folder log atau data ada jika diperlukan
-RUN touch app_dicom.log && chmod 666 app_dicom.log
-
+# Buat folder log dan folder temporary
+# Folder /temporary ini yang akan digunakan oleh aplikasi
+RUN touch app_dicom.log && chmod 666 app_dicom.log \
+    && mkdir -p /temporary && chmod 777 /temporary
+    
 EXPOSE 5000
 
 CMD ["python", "app.py"]

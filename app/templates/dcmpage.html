@@ -65,6 +65,9 @@
                         <li class="nav-item">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct"><i class="fa-solid fa-bolt me-1"></i> Direct Send</button>
                         </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i class="fa-solid fa-download me-1"></i> Save to Local</button>
+                        </li>
                     </ul>
                 </div>
                 
@@ -124,6 +127,17 @@
                                 <button type="submit" class="btn btn-warning w-100 fw-bold">KIRIM LANGSUNG</button>
                             </form>
                         </div>
+
+                        <div class="tab-pane fade" id="tab-save">
+                            <form id="formSave">
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold">Study Instance UID</label>
+                                    <input type="text" class="form-control" id="save-study" placeholder="Masukkan UID untuk download ke PC..." required>
+                                </div>
+                                <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE LOKAL (.DCM)</button>
+                            </form>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -141,6 +155,13 @@
                     <div class="log-container" id="logConsole">
                         <div class="log-entry text-muted">>> System ready. Menunggu input...</div>
                     </div>
+
+                    <div class="card-footer bg-white border-0 text-end">
+                        <button class="btn btn-sm btn-outline-secondary" id="btnClearTemp">
+                            <i class="fa-solid fa-broom me-1"></i> Clear Temporary Storage
+                        </button>
+                    </div>    
+
                 </div>
             </div>
         </div>
@@ -243,34 +264,94 @@
 
 
     // --- LOGIKA API 3: DIRECT SEND ---
-document.getElementById('formDirect').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const studyUid = document.getElementById('direct-study').value.trim();
+    document.getElementById('formDirect').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const studyUid = document.getElementById('direct-study').value.trim();
 
-    loadingModal.show();
-    addLog(`MEMULAI DIRECT SEND: ${studyUid}`, 'warning');
+        loadingModal.show();
+        addLog(`MEMULAI DIRECT SEND: ${studyUid}`, 'warning');
 
-    try {
-        const resp = await fetch('/api/dicom/direct-dcm', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ study: studyUid })
-        });
-        
-        const res = await resp.json();
-        
-        if (resp.ok) {
-            addLog(`BERHASIL: Direct Send Sukses untuk Study UID ${studyUid}`, 'info');
-            document.getElementById('formDirect').reset();
-        } else {
-            addLog(`GAGAL: ${res.message || 'Terjadi kesalahan server'}`, 'error');
+        try {
+            const resp = await fetch('/api/dicom/direct-dcm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ study: studyUid })
+            });
+            
+            const res = await resp.json();
+            
+            if (resp.ok) {
+                addLog(`BERHASIL: Direct Send Sukses untuk Study UID ${studyUid}`, 'info');
+                document.getElementById('formDirect').reset();
+            } else {
+                addLog(`GAGAL: ${res.message || 'Terjadi kesalahan server'}`, 'error');
+            }
+        } catch (err) {
+            addLog(`KONEKSI ERROR: Gagal menghubungi server backend.`, 'error');
+        } finally {
+            setTimeout(() => { loadingModal.hide(); }, 800);
         }
-    } catch (err) {
-        addLog(`KONEKSI ERROR: Gagal menghubungi server backend.`, 'error');
-    } finally {
-        setTimeout(() => { loadingModal.hide(); }, 800);
-    }
-});
+    });
+
+    // --- LOGIKA API 4: SAVE TO LOCAL ---
+    document.getElementById('formSave').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const studyUid = document.getElementById('save-study').value.trim();
+
+        loadingModal.show();
+        addLog(`Mempersiapkan download file: ${studyUid}.dcm`, 'warning');
+
+        try {
+            const resp = await fetch('/api/dicom/save-dcm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ study: studyUid })
+            });
+
+            if (resp.ok) {
+                // Mengubah response menjadi Blob agar bisa didownload browser
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${studyUid}.dcm`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                
+                addLog(`BERHASIL: File ${studyUid}.dcm telah dikirim ke browser.`, 'info');
+            } else {
+                const errData = await resp.json();
+                addLog(`GAGAL: ${errData.message || 'Gagal mengunduh file'}`, 'error');
+            }
+        } catch (err) {
+            addLog(`KONEKSI ERROR: Tidak dapat mengambil file dari server.`, 'error');
+        } finally {
+            loadingModal.hide();
+        }
+    });
+
+    // --- LOGIKA API: CLEAR TEMPORARY ---
+    document.getElementById('btnClearTemp').addEventListener('click', async () => {
+        if (!confirm('Hapus semua file temporary di server?')) return;
+
+        addLog("Membersihkan storage temporary di server...", 'warning');
+        try {
+            const resp = await fetch('/api/dicom/clear-temp', {
+                method: 'DELETE'
+            });
+            const res = await resp.json();
+            if (resp.ok) {
+                addLog(`CLEANUP: ${res.message}`, 'info');
+                alert(res.message);
+            } else {
+                addLog(`GAGAL CLEANUP: ${res.message}`, 'error');
+            }
+        } catch (err) {
+            addLog("ERROR: Gagal menghubungi server untuk cleanup.", 'error');
+        }
+    });
+
 </script>
 
 </body>

@@ -10,5 +10,8 @@ services:
     volumes:
       # Mount folder untuk menyimpan log secara permanen di host
       - ./app_dicom.log:/app/app_dicom.log
+      # Mount folder temporary agar file sampah mudah dipantau dari host (opsional)
+      # Jika ingin otomatis bersih saat kontainer restart, jangan di-mount ke host.
+      - ./temporary_files:/temporary
     environment:
       - PYTHONUNBUFFERED=1

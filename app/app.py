@@ -1,11 +1,13 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_file, after_this_request
 from flask_restx import Api, Resource, Namespace, fields
 import requests
 import subprocess
 import os
 from werkzeug.datastructures import FileStorage
+import shutil
+import tempfile
 
 app = Flask(__name__)
 
@@ -18,6 +20,11 @@ log_handler.setFormatter(log_formatter)
 logger = logging.getLogger('DicomLogger')
 logger.setLevel(logging.INFO)
 logger.addHandler(log_handler)
+
+# --- Konfigurasi Folder Temporary ---
+TEMP_DIR = os.path.join(tempfile.gettempdir(), 'dicom_gateway_tmp')
+if not os.path.exists(TEMP_DIR):
+    os.makedirs(TEMP_DIR)
 
 # --- FLASK-RESTX API CONFIGURATION ---
 api = Api(app, 
@@ -32,7 +39,7 @@ api.add_namespace(dicom_ns)
 
 # --- SYSTEM CONFIGURATION ---
 DCM4CHEE_URL = "http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE"
-ROUTER_IP = "192.10.10.28"
+ROUTER_IP = "192.10.10.51"
 ROUTER_PORT = "11112"
 ROUTER_AET = "DCMROUTER"
 
@@ -44,6 +51,10 @@ dicom_model = dicom_ns.model('DicomSend', {
 })
 
 direct_model = dicom_ns.model('DirectSend', {
+    'study': fields.String(required=True, example='1.3.46...')
+})
+
+save_model = dicom_ns.model('SaveDicom', {
     'study': fields.String(required=True, example='1.3.46...')
 })
 
@@ -268,6 +279,90 @@ class DirectDicom(Resource):
             cleanup_files(local_file)
             dicom_ns.abort(500, str(e))
 
+@dicom_ns.route('/save-dcm')
+class SaveDicom(Resource):
+    @dicom_ns.expect(save_model)
+    def post(self):
+        data = dicom_ns.payload
+        study_uid = data.get('study')
+        
+        # Simpan file di dalam folder temporary yang sudah ditentukan
+        # Contoh: /tmp/dicom_gateway_tmp/1.3.46...dcm
+        local_path = os.path.join(TEMP_DIR, f"{study_uid}.dcm")
+        
+        logger.info(f"[SAVE] Mendownload file ke temp: {local_path}")
+
+        # Fungsi ini akan dijalankan OTOMATIS setelah Flask mengirimkan file
+        @after_this_request
+        def remove_file(response):
+            try:
+                if os.path.exists(local_path):
+                    os.remove(local_path)
+                    logger.info(f"[CLEANUP] File temporary berhasil dihapus: {local_path}")
+            except Exception as e:
+                logger.error(f"Gagal menghapus file setelah download: {str(e)}")
+            return response
+
+        try:
+            # 1. Ambil Metadata (Mendapatkan Series & SOP UID)
+            meta_url = f"{DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
+            meta_resp = requests.get(meta_url, timeout=15)
+            meta_resp.raise_for_status()
+            metadata = meta_resp.json()
+            
+            series_uid = metadata[0]["0020000E"]["Value"][0]
+            sop_uid = metadata[0]["00080018"]["Value"][0]
+
+            # 2. Download dari DCM4CHEE via WADO ke folder temporary
+            wado_url = f"{DCM4CHEE_URL}/wado"
+            params = {
+                "requestType": "WADO", 
+                "studyUID": study_uid,
+                "seriesUID": series_uid, 
+                "objectUID": sop_uid,
+                "contentType": "application/dicom"
+            }
+            
+            img_resp = requests.get(wado_url, params=params, stream=True)
+            img_resp.raise_for_status()
+
+            with open(local_path, 'wb') as f:
+                for chunk in img_resp.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+            # 3. Kirim ke browser user
+            # Flask akan membaca file dari local_path, lalu remove_file() akan menghapusnya
+            return send_file(
+                local_path, 
+                as_attachment=True, 
+                download_name=f"{study_uid}.dcm",
+                mimetype='application/dicom'
+            )
+
+        except Exception as e:
+            logger.error(f"SAVE FAILED: {str(e)}")
+            # Jika gagal di tengah jalan, coba hapus file jika sempat tercipta
+            if os.path.exists(local_path):
+                os.remove(local_path)
+            dicom_ns.abort(500, f"Gagal memproses download: {str(e)}")
+            
+
+@dicom_ns.route('/clear-temp')
+class ClearTemp(Resource):
+    def delete(self):
+        try:
+            files = os.listdir(TEMP_DIR)
+            count = 0
+            for f in files:
+                file_path = os.path.join(TEMP_DIR, f)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                    count += 1
+            logger.info(f"[SYSTEM] Membersihkan {count} file di folder temporary.")
+            return {"status": "success", "message": f"Berhasil menghapus {count} file"}, 200
+        except Exception as e:
+            logger.error(f"Gagal membersihkan temp: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
