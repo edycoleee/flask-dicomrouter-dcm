@@ -59,13 +59,13 @@ WEB HTML
 PASTIKAN 3 API INI TERSEDIA DAN BISA DIAKSES 
 
 1. API DCM4CHE melihat metadata dari server pacs
-http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.46.670589.30.39.0.1.966169802732.1695243280236.1/metadata
+http://<-ip-pacs-dcm4che>:8081/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.46.670589.30.39.0.1.966169802732.1695243280236.1/metadata
 
 2. API DCM4CHE download file dcm dari server pacs de file lokal
-http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&studyUID=1.3.46.670589.30.39.0.1.966169802732.1695243280236.1&seriesUID=1.3.46.670589.30.39.0.1.966169802732.1695243642250.1&objectUID=1.3.46.670589.30.39.0.1.966169802732.1695243642379.1&contentType=application/dicom
+http://<-ip-pacs-dcm4che>:8081/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&studyUID=1.3.46.670589.30.39.0.1.966169802732.1695243280236.1&seriesUID=1.3.46.670589.30.39.0.1.966169802732.1695243642250.1&objectUID=1.3.46.670589.30.39.0.1.966169802732.1695243642379.1&contentType=application/dicom
 
 3. API DCM4CHE download file dcm dari server pacs ke file lokal dengan nama file
-curl -X GET "http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&studyUID=1.3.46.670589.30.39.0.1.966169802732.1695243280236.1&seriesUID=1.3.46.670589.30.39.0.1.966169802732.1695243642250.1&objectUID=1.3.46.670589.30.39.0.1.966169802732.1695243642379.1&contentType=application/dicom" \ 
+curl -X GET "http://<-ip-pacs-dcm4che>:8081/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&studyUID=1.3.46.670589.30.39.0.1.966169802732.1695243280236.1&seriesUID=1.3.46.670589.30.39.0.1.966169802732.1695243642250.1&objectUID=1.3.46.670589.30.39.0.1.966169802732.1695243642379.1&contentType=application/dicom" \ 
 -o gambar_pasien.dcm   
 
 ```
@@ -138,12 +138,9 @@ dcmodify --ignore-errors \
 gambar_pasien.dcm 
 
 Kirim file dcm ke dicom router
-storescu -aec -v DCMROUTER 192.10.10.28 11112 ambar_pasien.dcm 
+storescu -aec -v DCMROUTER <-ip-dicomrouter> 11112 ambar_pasien.dcm 
 
 ```
-Ujicoba bisa menggunakan file dcm dari inet kemudian dicoba
-
-https://www.rubomedical.com/dicom_files/dicom_viewer_0003.zip
 
 ### 5. SATUSEHAT 
 
