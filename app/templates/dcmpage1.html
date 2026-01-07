@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DICOM Gateway Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --console-bg: #1e1e1e;
+            --console-text: #00ff00;
+        }
+
+        body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; }
+        .card { border-radius: 12px; border: none; shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card-header { background: #fff !important; font-weight: bold; border-bottom: 1px solid #eee; }
+        
+        /* Log Console Style */
+        .log-container {
+            background: var(--console-bg);
+            color: var(--console-text);
+            padding: 15px;
+            height: 480px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            border-radius: 8px;
+            border: 2px solid #333;
+        }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #2a2a2a; padding-bottom: 2px; }
+        .timestamp { color: #888; font-size: 11px; margin-right: 8px; }
+        
+        /* Tab Styling */
+        .nav-tabs .nav-link { color: #555; font-weight: 500; border: none; }
+        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+    <div class="container">
+        <a class="navbar-brand" href="#"><i class="fa-solid fa-microchip me-2 text-info"></i>DICOM Gateway <span class="badge bg-secondary ms-2">RPi v1.0</span></a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" href="/api/docs" target="_blank"><i class="fa-solid fa-book me-1"></i> API Docs</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row g-4">
+        
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header py-3">
+                    <ul class="nav nav-tabs card-header-tabs" id="dicomTab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-fetch"><i class="fa-solid fa-sync me-1"></i> Fetch & Send</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload"><i class="fa-solid fa-upload me-1"></i> Manual Upload</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct"><i class="fa-solid fa-bolt me-1"></i> Direct Send</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i class="fa-solid fa-download me-1"></i> Save to Local</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="tab-content">
+                        
+                        <div class="tab-pane fade show active" id="tab-fetch">
+                            <form id="formFetch">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Study Instance UID (DCM4CHEE)</label>
+                                    <input type="text" class="form-control" id="fetch-study" placeholder="1.3.46.67..." required>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label small fw-bold">Patient ID Baru</label>
+                                        <input type="text" class="form-control" id="fetch-pid" placeholder="P-001" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label small fw-bold">Accession No. Baru</label>
+                                        <input type="text" class="form-control" id="fetch-acc" placeholder="ACC-001" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 fw-bold">PROSES & KIRIM</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-upload">
+                            <form id="formUpload">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">File DICOM (.dcm)</label>
+                                    <input type="file" class="form-control" id="upload-file" accept=".dcm" required>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label class="form-label small fw-bold">Patient ID Baru</label>
+                                        <input type="text" class="form-control" id="upload-pid" placeholder="P-001" required>
+                                    </div>
+                                    <div class="col">
+                                        <label class="form-label small fw-bold">Accession No. Baru</label>
+                                        <input type="text" class="form-control" id="upload-acc" placeholder="ACC-001" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100 fw-bold">UPLOAD & KIRIM</button>
+                            </form>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="tab-direct">
+                            <form id="formDirect">
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold">Study Instance UID</label>
+                                    <input type="text" class="form-control" id="direct-study" placeholder="Kirim data asli tanpa modifikasi..." required>
+                                </div>
+                                <div class="alert alert-warning py-2 small">
+                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                    Perhatian: Data akan dikirim apa adanya sesuai sumber asli (DCM4CHEE).
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 fw-bold">KIRIM LANGSUNG</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-save">
+                            <form id="formSave">
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold">Study Instance UID</label>
+                                    <input type="text" class="form-control" id="save-study" placeholder="Masukkan UID untuk download ke PC..." required>
+                                </div>
+                                <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE LOKAL (.DCM)</button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center py-3">
+                    <span><i class="fa-solid fa-terminal me-2 text-success"></i>Process Console</span>
+                    <button class="btn btn-sm btn-outline-danger border-0" onclick="document.getElementById('logConsole').innerHTML='' ">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="log-container" id="logConsole">
+                        <div class="log-entry text-muted">>> System ready. Menunggu input...</div>
+                    </div>
+
+                    <div class="card-footer bg-white border-0 text-end">
+                        <button class="btn btn-sm btn-outline-secondary" id="btnClearTemp">
+                            <i class="fa-solid fa-broom me-1"></i> Clear Temporary Storage
+                        </button>
+                    </div>    
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 bg-transparent">
+            <div class="card w-100 p-4 text-center border-0 shadow-lg">
+                <div class="spinner-border text-primary mx-auto mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                <h5 class="mb-1">Sedang Memproses DICOM...</h5>
+                <p class="text-muted small mb-0">Mohon tunggu, sistem sedang menjalankan tugas.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    const logConsole = document.getElementById('logConsole');
+
+    function addLog(message, type = 'info') {
+        const time = new Date().toLocaleTimeString('id-ID');
+        let color = "#00ff00"; 
+        if(type === 'error') color = "#ff4d4d";
+        if(type === 'warning') color = "#ffcc00";
+
+        const entry = document.createElement('div');
+        entry.className = "log-entry";
+        entry.style.color = color;
+        entry.innerHTML = `<span class="timestamp">[${time}]</span> >> ${message}`;
+        logConsole.appendChild(entry);
+        logConsole.scrollTop = logConsole.scrollHeight;
+    }
+
+    // --- LOGIKA API 1: FETCH & SEND ---
+    document.getElementById('formFetch').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            study: document.getElementById('fetch-study').value,
+            patientid: document.getElementById('fetch-pid').value,
+            accesionnum: document.getElementById('fetch-acc').value
+        };
+
+        loadingModal.show();
+        addLog(`Memulai Fetch dari DCM4CHEE: ${payload.study}`);
+
+        try {
+            const resp = await fetch('/api/dicom/send-dcm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const res = await resp.json();
+            if (resp.ok) {
+                addLog(`BERHASIL: ${res.message}`, 'info');
+            } else {
+                addLog(`GAGAL: ${res.message || 'Error Server'}`, 'error');
+            }
+        } catch (err) {
+            addLog(`ERROR KONEKSI: ${err.message}`, 'error');
+        } finally {
+            loadingModal.hide();
+        }
+    });
+
+    // --- LOGIKA API 2: MANUAL UPLOAD ---
+    document.getElementById('formUpload').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('upload-file');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('patientid', document.getElementById('upload-pid').value);
+        formData.append('accesionnum', document.getElementById('upload-acc').value);
+
+        loadingModal.show();
+        addLog(`Mengunggah file: ${fileInput.files[0].name}`);
+
+        try {
+            const resp = await fetch('/api/dicom/upload-dcm', {
+                method: 'POST',
+                body: formData
+            });
+            const res = await resp.json();
+            if (resp.ok) {
+                addLog(`BERHASIL: ${res.message} (ACC: ${res.accession})`, 'info');
+                document.getElementById('formUpload').reset();
+            } else {
+                addLog(`GAGAL: ${res.message || 'Error Server'}`, 'error');
+            }
+        } catch (err) {
+            addLog(`ERROR KONEKSI: ${err.message}`, 'error');
+        } finally {
+            loadingModal.hide();
+        }
+    });
+
+
+    // --- LOGIKA API 3: DIRECT SEND ---
+    document.getElementById('formDirect').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const studyUid = document.getElementById('direct-study').value.trim();
+
+        loadingModal.show();
+        addLog(`MEMULAI DIRECT SEND: ${studyUid}`, 'warning');
+
+        try {
+            const resp = await fetch('/api/dicom/direct-dcm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ study: studyUid })
+            });
+            
+            const res = await resp.json();
+            
+            if (resp.ok) {
+                addLog(`BERHASIL: Direct Send Sukses untuk Study UID ${studyUid}`, 'info');
+                document.getElementById('formDirect').reset();
+            } else {
+                addLog(`GAGAL: ${res.message || 'Terjadi kesalahan server'}`, 'error');
+            }
+        } catch (err) {
+            addLog(`KONEKSI ERROR: Gagal menghubungi server backend.`, 'error');
+        } finally {
+            setTimeout(() => { loadingModal.hide(); }, 800);
+        }
+    });
+
+    // --- LOGIKA API 4: SAVE TO LOCAL ---
+    document.getElementById('formSave').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const studyUid = document.getElementById('save-study').value.trim();
+
+        loadingModal.show();
+        addLog(`Mempersiapkan download file: ${studyUid}.dcm`, 'warning');
+
+        try {
+            const resp = await fetch('/api/dicom/save-dcm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ study: studyUid })
+            });
+
+            if (resp.ok) {
+                // Mengubah response menjadi Blob agar bisa didownload browser
+                const blob = await resp.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${studyUid}.dcm`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                
+                addLog(`BERHASIL: File ${studyUid}.dcm telah dikirim ke browser.`, 'info');
+            } else {
+                const errData = await resp.json();
+                addLog(`GAGAL: ${errData.message || 'Gagal mengunduh file'}`, 'error');
+            }
+        } catch (err) {
+            addLog(`KONEKSI ERROR: Tidak dapat mengambil file dari server.`, 'error');
+        } finally {
+            loadingModal.hide();
+        }
+    });
+
+    // --- LOGIKA API: CLEAR TEMPORARY ---
+    document.getElementById('btnClearTemp').addEventListener('click', async () => {
+        if (!confirm('Hapus semua file temporary di server?')) return;
+
+        addLog("Membersihkan storage temporary di server...", 'warning');
+        try {
+            const resp = await fetch('/api/dicom/clear-temp', {
+                method: 'DELETE'
+            });
+            const res = await resp.json();
+            if (resp.ok) {
+                addLog(`CLEANUP: ${res.message}`, 'info');
+                alert(res.message);
+            } else {
+                addLog(`GAGAL CLEANUP: ${res.message}`, 'error');
+            }
+        } catch (err) {
+            addLog("ERROR: Gagal menghubungi server untuk cleanup.", 'error');
+        }
+    });
+
+</script>
+
+</body>
+</html>

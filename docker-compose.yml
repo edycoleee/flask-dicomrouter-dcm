@@ -8,10 +8,13 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # Mount folder untuk menyimpan log secara permanen di host
-      - ./app_dicom.log:/app/app_dicom.log
-      # Mount folder temporary agar file sampah mudah dipantau dari host (opsional)
-      # Jika ingin otomatis bersih saat kontainer restart, jangan di-mount ke host.
-      - ./temporary_files:/temporary
+      - ./logs:/app/logs # Log masuk ke folder logs di host
     environment:
       - PYTHONUNBUFFERED=1
+      # SETTING JARINGAN DI SINI:
+      - DCM4CHEE_URL=http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE
+      - ROUTER_IP=192.10.10.51
+      - ROUTER_PORT=11112
+      - ROUTER_AET=DCMROUTER
+      - LOG_FILE=/app/logs/app_dicom.log
+      - TEMP_DIR=/tmp/dicom_gateway_tmp

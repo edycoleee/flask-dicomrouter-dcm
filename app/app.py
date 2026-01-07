@@ -1,368 +1,194 @@
 import logging
-from logging.handlers import RotatingFileHandler
-from flask import Flask, render_template, jsonify, send_file, after_this_request
-from flask_restx import Api, Resource, Namespace, fields
-import requests
-import subprocess
 import os
-from werkzeug.datastructures import FileStorage
-import shutil
+import subprocess
+import requests
 import tempfile
+from logging.handlers import RotatingFileHandler
+from flask import Flask, render_template, send_file, after_this_request
+from flask_restx import Api, Resource, Namespace, fields
+from werkzeug.utils import secure_filename
+from werkzeug.datastructures import FileStorage
+from config import Config
 
 app = Flask(__name__)
+Config.init_app()
 
-# --- KONFIGURASI LOGGER ---
-log_filename = 'app_dicom.log'
-log_handler = RotatingFileHandler(log_filename, maxBytes=150000, backupCount=1)
-log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-log_handler.setFormatter(log_formatter)
-
+# --- LOGGER SETTINGS ---
 logger = logging.getLogger('DicomLogger')
 logger.setLevel(logging.INFO)
-logger.addHandler(log_handler)
+handler = RotatingFileHandler(Config.LOG_FILE, maxBytes=1_000_000, backupCount=3)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
 
-# --- Konfigurasi Folder Temporary ---
-TEMP_DIR = os.path.join(tempfile.gettempdir(), 'dicom_gateway_tmp')
-if not os.path.exists(TEMP_DIR):
-    os.makedirs(TEMP_DIR)
-
-# --- FLASK-RESTX API CONFIGURATION ---
-api = Api(app, 
-          version='1.0', 
-          title='DICOM Gateway API',
-          description='Gateway untuk Manipulasi dan Pengiriman Gambar DICOM',
-          doc='/docs', 
-          prefix='/api')
-
-dicom_ns = Namespace('dicom', description='Operasi DICOM ke Router')
+# --- API SETUP ---
+api = Api(app, version='1.1', title='DICOM Gateway API', doc='/api/docs', prefix='/api')
+dicom_ns = Namespace('dicom', description='DICOM Router Operations')
 api.add_namespace(dicom_ns)
-
-# --- SYSTEM CONFIGURATION ---
-DCM4CHEE_URL = "http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE"
-ROUTER_IP = "192.10.10.51"
-ROUTER_PORT = "11112"
-ROUTER_AET = "DCMROUTER"
 
 # --- MODELS ---
 dicom_model = dicom_ns.model('DicomSend', {
-    'study': fields.String(required=True, example='1.3.46...'),
-    'patientid': fields.String(required=True, example='P00001349322'),
-    'accesionnum': fields.String(required=True, example='202512300002')
-})
-
-direct_model = dicom_ns.model('DirectSend', {
-    'study': fields.String(required=True, example='1.3.46...')
-})
-
-save_model = dicom_ns.model('SaveDicom', {
-    'study': fields.String(required=True, example='1.3.46...')
+    'study': fields.String(required=True),
+    'patientid': fields.String(required=False),
+    'accesionnum': fields.String(required=False)
 })
 
 # --- HELPER FUNCTIONS ---
-def cleanup_files(filename):
-    for ext in ["", ".bak"]:
-        path = f"{filename}{ext}"
-        if os.path.exists(path):
-            try:
-                os.remove(path)
-            except Exception as e:
-                logger.error(f"Gagal menghapus {path}: {e}")
 
-# --- WEB UI ROUTES ---
+def get_dicom_metadata(study_uid):
+    """Mengambil Series dan SOP UID dari PACS."""
+    url = f"{Config.DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+    data = resp.json()
+    return {
+        "series": data[0]["0020000E"]["Value"][0],
+        "sop": data[0]["00080018"]["Value"][0]
+    }
+
+def download_wado(study_uid, meta, target_path):
+    """Download file DICOM asli."""
+    params = {
+        "requestType": "WADO", "studyUID": study_uid,
+        "seriesUID": meta['series'], "objectUID": meta['sop'],
+        "contentType": "application/dicom"
+    }
+    with requests.get(f"{Config.DCM4CHEE_URL}/wado", params=params, stream=True) as r:
+        r.raise_for_status()
+        with open(target_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+def modify_dicom(file_path, patient_id=None, acc_num=None):
+    """Edit tag DICOM menggunakan dcmodify."""
+    cmd = ["dcmodify", "--ignore-errors"]
+    if patient_id: cmd.extend(["-i", f"(0010,0020)={patient_id}"])
+    if acc_num: cmd.extend(["-i", f"(0008,0050)={acc_num}"])
+    cmd.append(file_path)
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"dcmodify error: {result.stderr}")
+    # Hapus file .bak yang otomatis dibuat dcmodify
+    if os.path.exists(f"{file_path}.bak"):
+        os.remove(f"{file_path}.bak")
+
+def send_to_router(file_path):
+    """Kirim file ke Router menggunakan storescu."""
+    cmd = [
+        "storescu", "-v", "--propose-lossless",
+        "-aec", Config.ROUTER_AET, 
+        Config.ROUTER_IP, Config.ROUTER_PORT, 
+        file_path
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if "Received Store Response (Success)" not in (result.stdout + result.stderr):
+        raise Exception(f"StoreSCU Failed: {result.stderr}")
+
+# --- API ENDPOINTS ---
+
+@dicom_ns.route('/process')
+class ProcessDicom(Resource):
+    @dicom_ns.expect(dicom_model)
+    def post(self):
+        """Ambil dari PACS -> Modifikasi (Opsional) -> Kirim ke Router"""
+        data = dicom_ns.payload
+        study_uid = data['study']
+        p_id = data.get('patientid')
+        acc = data.get('accesionnum')
+        
+        local_path = os.path.join(Config.TEMP_DIR, f"proc_{study_uid}.dcm")
+        
+        try:
+            logger.info(f"Processing Study: {study_uid}")
+            meta = get_dicom_metadata(study_uid)
+            download_wado(study_uid, meta, local_path)
+            
+            if p_id or acc:
+                modify_dicom(local_path, p_id, acc)
+                
+            send_to_router(local_path)
+            return {"status": "success", "study": study_uid}, 200
+        except Exception as e:
+            logger.error(f"Process failed: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+        finally:
+            if os.path.exists(local_path): os.remove(local_path)
+
+@dicom_ns.route('/upload')
+class UploadDicom(Resource):
+    upload_parser = api.parser()
+    upload_parser.add_argument('file', location='files', type=FileStorage, required=True)
+    upload_parser.add_argument('patientid', location='form')
+    upload_parser.add_argument('accesionnum', location='form')
+
+    @dicom_ns.expect(upload_parser)
+    def post(self):
+        """Upload file Lokal -> Modifikasi -> Kirim ke Router"""
+        args = self.upload_parser.parse_args()
+        file = args['file']
+        
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(Config.TEMP_DIR, f"up_{filename}")
+        file.save(temp_path)
+
+        try:
+            modify_dicom(temp_path, args.get('patientid'), args.get('accesionnum'))
+            send_to_router(temp_path)
+            return {"status": "success", "file": filename}, 200
+        except Exception as e:
+            logger.error(f"Upload process failed: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+        finally:
+            if os.path.exists(temp_path): os.remove(temp_path)
+
+@dicom_ns.route('/download/<study_uid>')
+class DownloadDicom(Resource):
+    def get(self, study_uid):
+        """Download file DICOM ke komputer user"""
+        local_path = os.path.join(Config.TEMP_DIR, f"dl_{study_uid}.dcm")
+        
+        @after_this_request
+        def cleanup(response):
+            if os.path.exists(local_path): os.remove(local_path)
+            return response
+
+        try:
+            meta = get_dicom_metadata(study_uid)
+            download_wado(study_uid, meta, local_path)
+            return send_file(local_path, as_attachment=True, download_name=f"{study_uid}.dcm")
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+@dicom_ns.route('/direct-dcm')
+class DirectDicom(Resource):
+    @dicom_ns.expect(api.model('Direct', {'study': fields.String(required=True)}))
+    def post(self):
+        """Relay Murni: Download dari PACS langsung kirim ke Router"""
+        data = dicom_ns.payload
+        study_uid = data['study']
+        local_path = os.path.join(Config.TEMP_DIR, f"relay_{study_uid}.dcm")
+
+        try:
+            logger.info(f"[RELAY] Memulai direct transfer untuk: {study_uid}")
+            
+            # 1. Metadata & Download
+            meta = get_dicom_metadata(study_uid)
+            download_wado(study_uid, meta, local_path)
+            
+            # 2. Kirim Langsung (Tanpa modify_dicom)
+            send_to_router(local_path)
+            
+            return {"status": "success", "message": "Relay berhasil", "study": study_uid}, 200
+        except Exception as e:
+            logger.error(f"[RELAY FAILED] {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+        finally:
+            if os.path.exists(local_path): 
+                os.remove(local_path)
+
 @app.route("/")
 def index():
     return render_template("dcmpage.html")
 
-# --- PARSER UNTUK UPLOAD FILE ---
-upload_parser = dicom_ns.parser()
-upload_parser.add_argument('file', location='files', type=FileStorage, required=True, help='File DICOM (.dcm)')
-upload_parser.add_argument('patientid', location='form', type=str, required=True, help='Patient ID Baru')
-upload_parser.add_argument('accesionnum', location='form', type=str, required=True, help='Accession Number Baru')
-
-
-# --- API ENDPOINTS ---
-@dicom_ns.route('/send-dcm')
-class SendDicom(Resource):
-    @dicom_ns.expect(dicom_model)
-    def post(self):
-        data = dicom_ns.payload
-        study_uid = data.get('study')
-        patient_id = data.get('patientid')
-        acc_num = data.get('accesionnum')
-
-        local_file = f"temp_{study_uid}.dcm"
-        
-        try:
-            # 1. Ambil Metadata
-            logger.info(f"[STEP 1] Mengambil Metadata dari DCM4CHEE untuk Study: {study_uid}")
-            meta_url = f"{DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
-            meta_resp = requests.get(meta_url, timeout=15)
-            meta_resp.raise_for_status()
-            metadata = meta_resp.json()
-            
-            series_uid = metadata[0]["0020000E"]["Value"][0]
-            sop_uid = metadata[0]["00080018"]["Value"][0]
-            logger.info(f"Metadata didapat: Series={series_uid}, SOP={sop_uid}")
-
-            # 2. Download DICOM via WADO
-            logger.info(f"[STEP 2] Downloading file DICOM via WADO...")
-            wado_url = f"{DCM4CHEE_URL}/wado"
-            params = {
-                "requestType": "WADO", "studyUID": study_uid,
-                "seriesUID": series_uid, "objectUID": sop_uid,
-                "contentType": "application/dicom"
-            }
-            img_resp = requests.get(wado_url, params=params, stream=True)
-            img_resp.raise_for_status()
-            with open(local_file, 'wb') as f:
-                for chunk in img_resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            logger.info(f"Download selesai: {local_file}")
-
-            # 3. dcmodify (Edit Tag DICOM)
-            logger.info(f"[STEP 3] Menjalankan dcmodify untuk PatientID: {patient_id} & Acc: {acc_num}")
-            modify_cmd = [
-                "dcmodify", "--ignore-errors",
-                "-i", f"(0010,0020)={patient_id}",
-                "-i", f"(0008,0050)={acc_num}",
-                local_file
-            ]
-            mod_result = subprocess.run(modify_cmd, capture_output=True, text=True)
-            if mod_result.returncode != 0:
-                logger.error(f"dcmodify error: {mod_result.stderr}")
-                raise Exception("Gagal modifikasi metadata DICOM")
-            logger.info("Modifikasi metadata berhasil.")
-
-            # 4. storescu (Kirim ke Router)
-            logger.info(f"[STEP 4] Mengirim ke Router {ROUTER_IP}:{ROUTER_PORT} via storescu")
-            send_cmd = ["storescu", "-v", "-aec", ROUTER_AET, ROUTER_IP, ROUTER_PORT, local_file]
-            result = subprocess.run(send_cmd, capture_output=True, text=True)
-            
-            combined_out = result.stdout + result.stderr
-            if "Received Store Response (Success)" in combined_out:
-                logger.info(f"SUCCESS: DICOM berhasil dikirim ke {ROUTER_AET}")
-                cleanup_files(local_file)
-                return {"status": "success", "message": "Proses selesai dan berhasil dikirim"}, 200
-            else:
-                logger.error(f"storescu output: {combined_out}")
-                raise Exception("Router menolak file atau tidak ada respon Success")
-
-        except Exception as e:
-            msg = str(e)
-            logger.error(f"FAILED: {msg}")
-            cleanup_files(local_file)
-            dicom_ns.abort(500, msg)
-
-@dicom_ns.route('/upload-dcm')
-class UploadDicom(Resource):
-    @dicom_ns.expect(upload_parser)
-    @dicom_ns.doc(description="1. Upload file DCM, 2. Modify Tags, 3. Send to Router")
-    def post(self):
-        args = upload_parser.parse_args()
-        file = args['file']
-        patient_id = args['patientid']
-        acc_num = args['accesionnum']
-
-        # Simpan file sementara
-        temp_filename = f"upload_{file.filename}"
-        file.save(temp_filename)
-        
-        logger.info(f"[UPLOAD] Menerima file: {file.filename} untuk PID: {patient_id}, ACC: {acc_num}")
-
-        try:
-            # 1. dcmodify (Edit Tag DICOM)
-            logger.info(f"[STEP 1] Modifikasi metadata file upload...")
-            modify_cmd = [
-                "dcmodify", "--ignore-errors",
-                "-i", f"(0010,0020)={patient_id}",
-                "-i", f"(0008,0050)={acc_num}",
-                temp_filename
-            ]
-            subprocess.run(modify_cmd, check=True, capture_output=True)
-            logger.info("dcmodify berhasil dieksekusi")
-
-            # 2. storescu (Kirim ke Router)
-            logger.info(f"[STEP 2] Mengirim {temp_filename} ke {ROUTER_IP}...")
-            send_cmd = [
-                "storescu", "-v", 
-                "-aec", ROUTER_AET, 
-                ROUTER_IP, ROUTER_PORT, 
-                temp_filename
-            ]
-            result = subprocess.run(send_cmd, capture_output=True, text=True)
-            
-            # 3. Validasi Response
-            combined_log = result.stdout + result.stderr
-            if "Received Store Response (Success)" in combined_log:
-                logger.info(f"SUCCESS: Upload & Send Berhasil untuk ACC: {acc_num}")
-                cleanup_files(temp_filename)
-                return {
-                    "status": "success",
-                    "message": "File diupload, dimodifikasi, dan dikirim",
-                    "accession": acc_num
-                }, 200
-            else:
-                logger.error(f"storescu output: {combined_log}")
-                raise Exception("Router menolak koneksi atau tidak memberikan respon success")
-
-        except Exception as e:
-            logger.error(f"FAILED: Gagal memproses upload: {str(e)}")
-            cleanup_files(temp_filename)
-            dicom_ns.abort(500, str(e))
-
-
-# --- API 3: DIRECT SEND ---
-@dicom_ns.route('/direct-dcm')
-class DirectDicom(Resource):
-    @dicom_ns.expect(direct_model)
-    def post(self):
-        data = dicom_ns.payload
-        study_uid = data.get('study')
-        local_file = f"direct_{study_uid}.dcm"
-        
-        logger.info(f"[DIRECT] Memulai proses Direct Send: {study_uid}")
-
-        try:
-            # 1. Ambil Metadata (Gunakan URL yang sudah Anda tes di terminal)
-            meta_url = f"{DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
-            meta_resp = requests.get(meta_url, timeout=15)
-            meta_resp.raise_for_status()
-            metadata = meta_resp.json()
-            
-            # Ambil UID yang diperlukan
-            series_uid = metadata[0]["0020000E"]["Value"][0]
-            sop_uid = metadata[0]["00080018"]["Value"][0]
-
-            # 2. Download File via WADO
-            wado_url = f"{DCM4CHEE_URL}/wado"
-            params = {
-                "requestType": "WADO",
-                "studyUID": study_uid,
-                "seriesUID": series_uid,
-                "objectUID": sop_uid,
-                "contentType": "application/dicom"
-            }
-            img_resp = requests.get(wado_url, params=params, stream=True)
-            img_resp.raise_for_status()
-            
-            with open(local_file, 'wb') as f:
-                for chunk in img_resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            logger.info(f"File berhasil diunduh: {local_file} (Size: {os.path.getsize(local_file)} bytes)")
-
-            # 3. StoreSCU (Gunakan flag yang didukung dcmtk v3.6.7)
-            # Kita gunakan --propose-lossless untuk keamanan transfer syntax
-            send_cmd = [
-                "storescu", "-v", 
-                "--propose-lossless", 
-                "-aec", ROUTER_AET, 
-                ROUTER_IP, ROUTER_PORT, 
-                local_file
-            ]
-            
-            result = subprocess.run(send_cmd, capture_output=True, text=True)
-            combined_log = result.stdout + result.stderr
-            
-            # Cek apakah respon mengandung kata 'Success'
-            if "Received Store Response (Success)" in combined_log:
-                logger.info(f"SUCCESS: Direct Send {study_uid} Berhasil!")
-                cleanup_files(local_file)
-                return {"status": "success", "message": "Direct Send Berhasil"}, 200
-            else:
-                # Jika ditolak karena duplikasi, log akan mencatatnya
-                logger.error(f"ROUTER REJECTED: {combined_log}")
-                raise Exception("Router menolak file (Cek kemungkinan duplikasi UID atau Koneksi)")
-
-        except Exception as e:
-            logger.error(f"FAILED: {str(e)}")
-            cleanup_files(local_file)
-            dicom_ns.abort(500, str(e))
-
-@dicom_ns.route('/save-dcm')
-class SaveDicom(Resource):
-    @dicom_ns.expect(save_model)
-    def post(self):
-        data = dicom_ns.payload
-        study_uid = data.get('study')
-        
-        # Simpan file di dalam folder temporary yang sudah ditentukan
-        # Contoh: /tmp/dicom_gateway_tmp/1.3.46...dcm
-        local_path = os.path.join(TEMP_DIR, f"{study_uid}.dcm")
-        
-        logger.info(f"[SAVE] Mendownload file ke temp: {local_path}")
-
-        # Fungsi ini akan dijalankan OTOMATIS setelah Flask mengirimkan file
-        @after_this_request
-        def remove_file(response):
-            try:
-                if os.path.exists(local_path):
-                    os.remove(local_path)
-                    logger.info(f"[CLEANUP] File temporary berhasil dihapus: {local_path}")
-            except Exception as e:
-                logger.error(f"Gagal menghapus file setelah download: {str(e)}")
-            return response
-
-        try:
-            # 1. Ambil Metadata (Mendapatkan Series & SOP UID)
-            meta_url = f"{DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
-            meta_resp = requests.get(meta_url, timeout=15)
-            meta_resp.raise_for_status()
-            metadata = meta_resp.json()
-            
-            series_uid = metadata[0]["0020000E"]["Value"][0]
-            sop_uid = metadata[0]["00080018"]["Value"][0]
-
-            # 2. Download dari DCM4CHEE via WADO ke folder temporary
-            wado_url = f"{DCM4CHEE_URL}/wado"
-            params = {
-                "requestType": "WADO", 
-                "studyUID": study_uid,
-                "seriesUID": series_uid, 
-                "objectUID": sop_uid,
-                "contentType": "application/dicom"
-            }
-            
-            img_resp = requests.get(wado_url, params=params, stream=True)
-            img_resp.raise_for_status()
-
-            with open(local_path, 'wb') as f:
-                for chunk in img_resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-            # 3. Kirim ke browser user
-            # Flask akan membaca file dari local_path, lalu remove_file() akan menghapusnya
-            return send_file(
-                local_path, 
-                as_attachment=True, 
-                download_name=f"{study_uid}.dcm",
-                mimetype='application/dicom'
-            )
-
-        except Exception as e:
-            logger.error(f"SAVE FAILED: {str(e)}")
-            # Jika gagal di tengah jalan, coba hapus file jika sempat tercipta
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            dicom_ns.abort(500, f"Gagal memproses download: {str(e)}")
-            
-
-@dicom_ns.route('/clear-temp')
-class ClearTemp(Resource):
-    def delete(self):
-        try:
-            files = os.listdir(TEMP_DIR)
-            count = 0
-            for f in files:
-                file_path = os.path.join(TEMP_DIR, f)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-                    count += 1
-            logger.info(f"[SYSTEM] Membersihkan {count} file di folder temporary.")
-            return {"status": "success", "message": f"Berhasil menghapus {count} file"}, 200
-        except Exception as e:
-            logger.error(f"Gagal membersihkan temp: {str(e)}")
-            return {"status": "error", "message": str(e)}, 500
-
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)

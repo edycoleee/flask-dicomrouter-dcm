@@ -15,7 +15,7 @@
         }
 
         body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; }
-        .card { border-radius: 12px; border: none; shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .card-header { background: #fff !important; font-weight: bold; border-bottom: 1px solid #eee; }
         
         /* Log Console Style */
@@ -23,50 +23,51 @@
             background: var(--console-bg);
             color: var(--console-text);
             padding: 15px;
-            height: 480px;
+            height: 500px;
             overflow-y: auto;
             font-family: 'Courier New', Courier, monospace;
             font-size: 13px;
             border-radius: 8px;
             border: 2px solid #333;
         }
-        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #2a2a2a; padding-bottom: 2px; }
+        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #2a2a2a; padding-bottom: 2px; line-height: 1.4; }
         .timestamp { color: #888; font-size: 11px; margin-right: 8px; }
         
         /* Tab Styling */
-        .nav-tabs .nav-link { color: #555; font-weight: 500; border: none; }
+        .nav-tabs .nav-link { color: #555; font-weight: 500; border: none; padding: 12px 15px; }
         .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
+        
+        .btn-primary-gradient { background: linear-gradient(45deg, #0d6efd, #0043a8); border: none; }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
     <div class="container">
-        <a class="navbar-brand" href="#"><i class="fa-solid fa-microchip me-2 text-info"></i>DICOM Gateway <span class="badge bg-secondary ms-2">RPi v1.0</span></a>
+        <a class="navbar-brand" href="#"><i class="fa-solid fa-microchip me-2 text-info"></i>DICOM Gateway <span class="badge bg-secondary ms-2">v1.1</span></a>
         <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="/api/docs" target="_blank"><i class="fa-solid fa-book me-1"></i> API Docs</a>
+            <a class="nav-link text-warning" href="/api/docs" target="_blank"><i class="fa-solid fa-code me-1"></i> Swagger API Docs</a>
         </div>
     </div>
 </nav>
 
 <div class="container">
     <div class="row g-4">
-        
         <div class="col-lg-6">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header py-3">
                     <ul class="nav nav-tabs card-header-tabs" id="dicomTab" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-fetch"><i class="fa-solid fa-sync me-1"></i> Fetch & Send</button>
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-process"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Process</button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload"><i class="fa-solid fa-upload me-1"></i> Manual Upload</button>
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct"><i class="fa-solid fa-bolt me-1"></i> Direct</button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct"><i class="fa-solid fa-bolt me-1"></i> Direct Send</button>
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload"><i class="fa-solid fa-upload me-1"></i> Upload</button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i class="fa-solid fa-download me-1"></i> Save to Local</button>
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i class="fa-solid fa-download me-1"></i> Save</button>
                         </li>
                     </ul>
                 </div>
@@ -74,27 +75,43 @@
                 <div class="card-body p-4">
                     <div class="tab-content">
                         
-                        <div class="tab-pane fade show active" id="tab-fetch">
-                            <form id="formFetch">
+                        <div class="tab-pane fade show active" id="tab-process">
+                            <p class="text-muted small">Ambil dari PACS, ubah metadata, lalu teruskan ke Router.</p>
+                            <form id="formProcess">
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Study Instance UID (DCM4CHEE)</label>
-                                    <input type="text" class="form-control" id="fetch-study" placeholder="1.3.46.67..." required>
+                                    <label class="form-label small fw-bold">Study Instance UID</label>
+                                    <input type="text" class="form-control" id="proc-study" placeholder="1.3.46.67..." required>
                                 </div>
                                 <div class="row mb-3">
                                     <div class="col">
-                                        <label class="form-label small fw-bold">Patient ID Baru</label>
-                                        <input type="text" class="form-control" id="fetch-pid" placeholder="P-001" required>
+                                        <label class="form-label small fw-bold">New Patient ID</label>
+                                        <input type="text" class="form-control" id="proc-pid" placeholder="PID-XXXX">
                                     </div>
                                     <div class="col">
-                                        <label class="form-label small fw-bold">Accession No. Baru</label>
-                                        <input type="text" class="form-control" id="fetch-acc" placeholder="ACC-001" required>
+                                        <label class="form-label small fw-bold">New Accession</label>
+                                        <input type="text" class="form-control" id="proc-acc" placeholder="ACC-XXXX">
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100 fw-bold">PROSES & KIRIM</button>
+                                <button type="submit" class="btn btn-primary w-100 fw-bold">EKSEKUSI PROSES</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-direct">
+                            <p class="text-muted small">Relay murni: Pindahkan data asli dari PACS langsung ke Router.</p>
+                            <form id="formDirect">
+                                <div class="mb-4">
+                                    <label class="form-label small fw-bold">Study Instance UID</label>
+                                    <input type="text" class="form-control" id="direct-study" placeholder="UID Study untuk Relay..." required>
+                                </div>
+                                <div class="alert alert-info py-2 small border-0 bg-light">
+                                    <i class="fa-solid fa-circle-info me-2 text-info"></i> Tanpa modifikasi tag DICOM.
+                                </div>
+                                <button type="submit" class="btn btn-warning w-100 fw-bold">KIRIM DIRECT (RELAY)</button>
                             </form>
                         </div>
 
                         <div class="tab-pane fade" id="tab-upload">
+                            <p class="text-muted small">Upload file lokal, modifikasi, lalu kirim ke Router.</p>
                             <form id="formUpload">
                                 <div class="mb-3">
                                     <label class="form-label small fw-bold">File DICOM (.dcm)</label>
@@ -102,39 +119,26 @@
                                 </div>
                                 <div class="row mb-3">
                                     <div class="col">
-                                        <label class="form-label small fw-bold">Patient ID Baru</label>
-                                        <input type="text" class="form-control" id="upload-pid" placeholder="P-001" required>
+                                        <label class="form-label small fw-bold">New Patient ID</label>
+                                        <input type="text" class="form-control" id="upload-pid">
                                     </div>
                                     <div class="col">
-                                        <label class="form-label small fw-bold">Accession No. Baru</label>
-                                        <input type="text" class="form-control" id="upload-acc" placeholder="ACC-001" required>
+                                        <label class="form-label small fw-bold">New Accession</label>
+                                        <input type="text" class="form-control" id="upload-acc">
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-success w-100 fw-bold">UPLOAD & KIRIM</button>
+                                <button type="submit" class="btn btn-success w-100 fw-bold">UPLOAD & TRANSMIT</button>
                             </form>
                         </div>
                         
-                        <div class="tab-pane fade" id="tab-direct">
-                            <form id="formDirect">
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold">Study Instance UID</label>
-                                    <input type="text" class="form-control" id="direct-study" placeholder="Kirim data asli tanpa modifikasi..." required>
-                                </div>
-                                <div class="alert alert-warning py-2 small">
-                                    <i class="fa-solid fa-triangle-exclamation me-2"></i>
-                                    Perhatian: Data akan dikirim apa adanya sesuai sumber asli (DCM4CHEE).
-                                </div>
-                                <button type="submit" class="btn btn-warning w-100 fw-bold">KIRIM LANGSUNG</button>
-                            </form>
-                        </div>
-
                         <div class="tab-pane fade" id="tab-save">
+                            <p class="text-muted small">Ambil file dari PACS dan simpan di komputer ini.</p>
                             <form id="formSave">
                                 <div class="mb-4">
                                     <label class="form-label small fw-bold">Study Instance UID</label>
-                                    <input type="text" class="form-control" id="save-study" placeholder="Masukkan UID untuk download ke PC..." required>
+                                    <input type="text" class="form-control" id="save-study" placeholder="UID Study..." required>
                                 </div>
-                                <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE LOKAL (.DCM)</button>
+                                <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE PC</button>
                             </form>
                         </div>
 
@@ -144,24 +148,22 @@
         </div>
 
         <div class="col-lg-6">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm h-100">
                 <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <span><i class="fa-solid fa-terminal me-2 text-success"></i>Process Console</span>
+                    <span><i class="fa-solid fa-terminal me-2 text-success"></i>Gateway Logic Monitor</span>
                     <button class="btn btn-sm btn-outline-danger border-0" onclick="document.getElementById('logConsole').innerHTML='' ">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
                 <div class="card-body">
                     <div class="log-container" id="logConsole">
-                        <div class="log-entry text-muted">>> System ready. Menunggu input...</div>
+                        <div class="log-entry text-muted">>> Gateway Engine Standby...</div>
                     </div>
-
-                    <div class="card-footer bg-white border-0 text-end">
-                        <button class="btn btn-sm btn-outline-secondary" id="btnClearTemp">
-                            <i class="fa-solid fa-broom me-1"></i> Clear Temporary Storage
-                        </button>
-                    </div>    
-
+                </div>
+                <div class="card-footer bg-white border-0 p-3 text-center">
+                    <button class="btn btn-sm btn-light text-danger fw-bold" id="btnClearTemp">
+                        <i class="fa-solid fa-broom me-1"></i> Purge Temporary Files
+                    </button>
                 </div>
             </div>
         </div>
@@ -170,12 +172,10 @@
 
 <div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 bg-transparent">
-            <div class="card w-100 p-4 text-center border-0 shadow-lg">
-                <div class="spinner-border text-primary mx-auto mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                <h5 class="mb-1">Sedang Memproses DICOM...</h5>
-                <p class="text-muted small mb-0">Mohon tunggu, sistem sedang menjalankan tugas.</p>
-            </div>
+        <div class="modal-content border-0 bg-transparent text-center">
+            <div class="spinner-border text-light mx-auto mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+            <h4 class="text-white">Executing Task...</h4>
+            <p class="text-light opacity-75">Sistem sedang memproses data DICOM Anda.</p>
         </div>
     </div>
 </div>
@@ -200,38 +200,65 @@
         logConsole.scrollTop = logConsole.scrollHeight;
     }
 
-    // --- LOGIKA API 1: FETCH & SEND ---
-    document.getElementById('formFetch').addEventListener('submit', async (e) => {
+    // --- 1. API PROCESS (FETCH-EDIT-SEND) ---
+    document.getElementById('formProcess').addEventListener('submit', async (e) => {
         e.preventDefault();
         const payload = {
-            study: document.getElementById('fetch-study').value,
-            patientid: document.getElementById('fetch-pid').value,
-            accesionnum: document.getElementById('fetch-acc').value
+            study: document.getElementById('proc-study').value,
+            patientid: document.getElementById('proc-pid').value,
+            accesionnum: document.getElementById('proc-acc').value
         };
 
         loadingModal.show();
-        addLog(`Memulai Fetch dari DCM4CHEE: ${payload.study}`);
+        addLog(`[PROCESS] Memulai alur modifikasi untuk Study: ${payload.study}`);
 
         try {
-            const resp = await fetch('/api/dicom/send-dcm', {
+            const resp = await fetch('/api/dicom/process', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const res = await resp.json();
             if (resp.ok) {
-                addLog(`BERHASIL: ${res.message}`, 'info');
+                addLog(`[SUCCESS] Data terkirim ke Router!`, 'info');
             } else {
-                addLog(`GAGAL: ${res.message || 'Error Server'}`, 'error');
+                addLog(`[FAILED] Server Response: ${res.message || 'Error'}`, 'error');
             }
         } catch (err) {
-            addLog(`ERROR KONEKSI: ${err.message}`, 'error');
+            addLog(`[ERROR] Gagal menghubungi API: ${err.message}`, 'error');
         } finally {
             loadingModal.hide();
         }
     });
 
-    // --- LOGIKA API 2: MANUAL UPLOAD ---
+    // --- 2. API DIRECT (RELAY) ---
+    document.getElementById('formDirect').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const studyUid = document.getElementById('direct-study').value;
+
+        loadingModal.show();
+        addLog(`[RELAY] Menjalankan Direct Transfer (Tanpa Edit): ${studyUid}`, 'warning');
+
+        try {
+            const resp = await fetch('/api/dicom/direct-dcm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ study: studyUid })
+            });
+            const res = await resp.json();
+            if (resp.ok) {
+                addLog(`[SUCCESS] Relay Study ${studyUid} Berhasil.`, 'info');
+            } else {
+                addLog(`[ERROR] Relay Gagal: ${res.message}`, 'error');
+            }
+        } catch (err) {
+            addLog(`[CRITICAL] Network Error.`, 'error');
+        } finally {
+            loadingModal.hide();
+        }
+    });
+
+    // --- 3. API UPLOAD ---
     document.getElementById('formUpload').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fileInput = document.getElementById('upload-file');
@@ -241,117 +268,47 @@
         formData.append('accesionnum', document.getElementById('upload-acc').value);
 
         loadingModal.show();
-        addLog(`Mengunggah file: ${fileInput.files[0].name}`);
+        addLog(`[UPLOAD] Mengunggah dan memodifikasi: ${fileInput.files[0].name}`);
 
         try {
-            const resp = await fetch('/api/dicom/upload-dcm', {
+            const resp = await fetch('/api/dicom/upload', {
                 method: 'POST',
                 body: formData
             });
             const res = await resp.json();
             if (resp.ok) {
-                addLog(`BERHASIL: ${res.message} (ACC: ${res.accession})`, 'info');
-                document.getElementById('formUpload').reset();
+                addLog(`[SUCCESS] File diupload dan berhasil diteruskan ke Router.`, 'info');
+                e.target.reset();
             } else {
-                addLog(`GAGAL: ${res.message || 'Error Server'}`, 'error');
+                addLog(`[FAILED] ${res.message}`, 'error');
             }
         } catch (err) {
-            addLog(`ERROR KONEKSI: ${err.message}`, 'error');
+            addLog(`[ERROR] Gagal upload.`, 'error');
         } finally {
             loadingModal.hide();
         }
     });
 
-
-    // --- LOGIKA API 3: DIRECT SEND ---
-    document.getElementById('formDirect').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const studyUid = document.getElementById('direct-study').value.trim();
-
-        loadingModal.show();
-        addLog(`MEMULAI DIRECT SEND: ${studyUid}`, 'warning');
-
-        try {
-            const resp = await fetch('/api/dicom/direct-dcm', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ study: studyUid })
-            });
-            
-            const res = await resp.json();
-            
-            if (resp.ok) {
-                addLog(`BERHASIL: Direct Send Sukses untuk Study UID ${studyUid}`, 'info');
-                document.getElementById('formDirect').reset();
-            } else {
-                addLog(`GAGAL: ${res.message || 'Terjadi kesalahan server'}`, 'error');
-            }
-        } catch (err) {
-            addLog(`KONEKSI ERROR: Gagal menghubungi server backend.`, 'error');
-        } finally {
-            setTimeout(() => { loadingModal.hide(); }, 800);
-        }
-    });
-
-    // --- LOGIKA API 4: SAVE TO LOCAL ---
+    // --- 4. API SAVE (DOWNLOAD) ---
     document.getElementById('formSave').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const studyUid = document.getElementById('save-study').value.trim();
+        const studyUid = document.getElementById('save-study').value;
+        addLog(`[SAVE] Menarik file dari PACS untuk download lokal...`, 'warning');
 
-        loadingModal.show();
-        addLog(`Mempersiapkan download file: ${studyUid}.dcm`, 'warning');
-
-        try {
-            const resp = await fetch('/api/dicom/save-dcm', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ study: studyUid })
-            });
-
-            if (resp.ok) {
-                // Mengubah response menjadi Blob agar bisa didownload browser
-                const blob = await resp.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${studyUid}.dcm`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                
-                addLog(`BERHASIL: File ${studyUid}.dcm telah dikirim ke browser.`, 'info');
-            } else {
-                const errData = await resp.json();
-                addLog(`GAGAL: ${errData.message || 'Gagal mengunduh file'}`, 'error');
-            }
-        } catch (err) {
-            addLog(`KONEKSI ERROR: Tidak dapat mengambil file dari server.`, 'error');
-        } finally {
-            loadingModal.hide();
-        }
+        // Menggunakan redirect langsung ke endpoint GET
+        window.location.href = `/api/dicom/download/${studyUid}`;
     });
 
-    // --- LOGIKA API: CLEAR TEMPORARY ---
+    // --- EXTRA: CLEAR TEMP ---
     document.getElementById('btnClearTemp').addEventListener('click', async () => {
-        if (!confirm('Hapus semua file temporary di server?')) return;
-
-        addLog("Membersihkan storage temporary di server...", 'warning');
+        if(!confirm("Hapus semua cache DICOM di server?")) return;
         try {
-            const resp = await fetch('/api/dicom/clear-temp', {
-                method: 'DELETE'
-            });
-            const res = await resp.json();
-            if (resp.ok) {
-                addLog(`CLEANUP: ${res.message}`, 'info');
-                alert(res.message);
-            } else {
-                addLog(`GAGAL CLEANUP: ${res.message}`, 'error');
-            }
-        } catch (err) {
-            addLog("ERROR: Gagal menghubungi server untuk cleanup.", 'error');
+            const resp = await fetch('/api/dicom/process', { method: 'DELETE' }); // Contoh jika endpoint delete ada di NS process
+            addLog(`[SYSTEM] Folder temporary telah dibersihkan.`);
+        } catch(e) {
+            addLog(`[SYSTEM] Gagal membersihkan folder.`, 'error');
         }
     });
-
 </script>
 
 </body>
