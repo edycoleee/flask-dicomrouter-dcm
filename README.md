@@ -195,3 +195,187 @@ http://192.168.30.14:5000/docs
 akses html-ui http://192.168.30.14:5000/
 
 aksea langsung api http://192.168.30.14:5000/api
+
+
+### RESPONSE DARI DICOM ROUTER 
+
+ Responnya sukses tidak bisa dilihat dari api dicom gateway, tapi hanya bisa dilihat dari dalam log dicom router :
+```
+docker logs dicom-router --tail 50
+```
+- RESPONSE SUKSES
+```
+D: ========================== INCOMING DIMSE MESSAGE ==========================
+D: Message Type                  : C-STORE RQ
+D: Presentation Context ID       : 63
+D: Message ID                    : 1
+D: Affected SOP Class UID        : Digital X-Ray Image Storage - For Presentation
+D: Affected SOP Instance UID     : 1.3.46.670589.30.39.0.1.966169802732.1757423874385.1
+D: Data Set                      : Present
+D: Priority                      : Medium
+D: ============================ END DIMSE MESSAGE =============================
+I: [Info-Assoc] - handle_store
+D: pydicom.read_dataset() TransferSyntax="Little Endian Implicit"
+I: Directory created
+I: Association Released
+I: Processing DICOM start
+I: Accession Number: 202512300---
+I: Study IUID: 1.3.46.670589.30.39.0.1.966169802732.1757423826764.1
+I: Obtaining Patient ID and ServiceRequest ID
+I: Patient ID and ServiceRequest ID obtained
+I: Encryption Config is False
+I: Start creating ImagingStudy
+I: ImagingStudy 1.3.46.670589.30.39.0.1.966169802732.1757423826764.1 created
+I: POST-ing ImagingStudy
+```
+ ```json
+{
+  "basedOn": [
+    {
+      "reference": "ServiceRequest/ce124594---------"
+    }
+  ],
+  "description": "Chest",
+  "id": "4630e0ce-26a6-4ae5-------",
+  "identifier": [
+    {
+      "system": "http://sys-ids.kemkes.go.id/acsn/100025702",
+      "type": {
+        "coding": [
+          {
+            "code": "ACSN",
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0203"
+          }
+        ]
+      },
+      "use": "usual",
+      "value": "202512300---"
+    },
+    {
+      "system": "urn:dicom:uid",
+      "value": "urn:oid:1.3.46.670589.30.39.0.1.966169802732.1757423826764.1"
+    }
+  ],
+  "meta": {
+    "lastUpdated": "2026-01-07T04:45:00.073409+00:00",
+    "versionId": "MTc2Nzc2MTEwMDA3MzQwOTAwMA"
+  },
+  "modality": [
+    {
+      "code": "DX",
+      "system": "http://dicom.nema.org/resources/ontology/DCM"
+    }
+  ],
+  "numberOfInstances": 1,
+  "numberOfSeries": 1,
+  "resourceType": "ImagingStudy",
+  "series": [
+    {
+      "description": "Chest",
+      "instance": [
+        {
+          "number": 1,
+          "sopClass": {
+            "code": "urn:oid:1.2.840.10008.5.1.4.1.1.1.1",
+            "system": "urn:ietf:rfc:3986"
+          },
+          "title": "ORIGINAL\\PRIMARY",
+          "uid": "1.3.46.670589.30.39.0.1.966169802732.1757423874385.1"
+        }
+      ],
+      "modality": {
+        "code": "DX",
+        "system": "http://dicom.nema.org/resources/ontology/DCM"
+      },
+      "number": 1,
+      "numberOfInstances": 1,
+      "started": "2025-09-09T14:17:32+07:00",
+      "uid": "1.3.46.670589.30.39.0.1.966169802732.1757423874364.1"
+    }
+  ],
+  "started": "2025-09-09T14:17:30+07:00",
+  "status": "available",
+  "subject": {
+    "reference": "Patient/P00284578---"
+  }
+}
+
+ ```  
+ ```
+I: ImagingStudy POST-ed, id: 4630e0ce-26a6-4ae5-ab02-c66138ee1bbe
+I: DICOM Push started
+I: dicom_push imagingStudyID: 4630e0ce-26a6-4ae5-ab02-c66138ee1bbe
+I: Sending Instance UID: 1.3.46.670589.30.39.0.1.966169802732.1757423874364.1/1.3.46.670589.30.39.0.1.966169802732.1757423874385.1 success
+I: DICOM sent successfully
+I: Deleting association folder
+
+ ```
+
+- RESPONSE ERROR
+
+Accession number(Number) dan Patient id(Tidak Kososng) tidak sesuai format yang diperbolehkan
+
+ ```
+ D: User Identity Negotiation Response: None
+D: ========================== END A-ASSOCIATE-AC PDU ==========================
+D: pydicom.read_dataset() TransferSyntax="Little Endian Implicit"
+I: Received Store Request
+D: ========================== INCOMING DIMSE MESSAGE ==========================
+D: Message Type                  : C-STORE RQ
+D: Presentation Context ID       : 63
+D: Message ID                    : 1
+D: Affected SOP Class UID        : Digital X-Ray Image Storage - For Presentation
+D: Affected SOP Instance UID     : 1.3.46.670589.30.39.0.1.966169802732.1757423874385.1
+D: Data Set                      : Present
+D: Priority                      : Medium
+D: ============================ END DIMSE MESSAGE =============================
+I: [Info-Assoc] - handle_store
+D: pydicom.read_dataset() TransferSyntax="Little Endian Implicit"
+I: Directory created
+I: Association Released
+I: Processing DICOM start
+I: Accession Number:
+I: Study IUID: 1.3.46.670589.30.39.0.1.966169802732.1757423826764.1
+I: Obtaining Patient ID and ServiceRequest ID
+I: Patient ID and ServiceRequest ID obtained
+I: Encryption Config is False
+I: Start creating ImagingStudy
+E: 'NoneType' object has no attribute 'json'
+E: Failed to create ImagingStudy for 1.3.46.670589.30.39.0.1.966169802732.1757423826764.1
+I: Deleting association folder
+ ```
+Accession number belum di daftarkan dengan service request
+
+ ```
+D: User Identity Negotiation Response: None
+D: ========================== END A-ASSOCIATE-AC PDU ==========================
+D: pydicom.read_dataset() TransferSyntax="Little Endian Implicit"
+I: Received Store Request
+D: ========================== INCOMING DIMSE MESSAGE ==========================
+D: Message Type                  : C-STORE RQ
+D: Presentation Context ID       : 63
+D: Message ID                    : 1
+D: Affected SOP Class UID        : Digital X-Ray Image Storage - For Presentation
+D: Affected SOP Instance UID     : 1.3.46.670589.30.39.0.1.966169802732.1767272497253.1
+D: Data Set                      : Present
+D: Priority                      : Medium
+D: ============================ END DIMSE MESSAGE =============================
+I: [Info-Assoc] - handle_store
+D: pydicom.read_dataset() TransferSyntax="Little Endian Implicit"
+I: Directory created
+I: Association Released
+I: Processing DICOM start
+I: Accession Number: 202512300---
+I: Study IUID: 1.3.46.670589.30.39.0.1.966169802732.1767272178983.1
+I: Obtaining Patient ID and ServiceRequest ID
+E: Failed to obtain Patient ID and ServiceRequest ID
+Traceback (most recent call last):
+  File "internal/dicom_handler.py", line 159, in handle_assoc_released
+    serviceRequestID, patientID = satusehat.get_service_request(accession_no)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "interface/satusehat.py", line 28, in get_service_request
+    raise Exception("ServiceRequest not found")
+Exception: ServiceRequest not found
+I: Encryption Config is False
+I: Deleting association folder
+ ```
