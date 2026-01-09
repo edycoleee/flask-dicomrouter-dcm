@@ -32,7 +32,35 @@ dicom_model = dicom_ns.model('DicomSend', {
     'accesionnum': fields.String(required=False)
 })
 
-# --- HELPER FUNCTIONS ---
+# --- SATUSEHAT CONFIG (Sesuaikan di config.py jika perlu) ---
+AUTH_URL = "https://api-satusehat.kemkes.go.id/oauth2/v1"
+BASE_URL = "https://api-satusehat.kemkes.go.id/fhir-r4/v1"
+ORG_ID = "10002xxxx"
+CLIENT_ID = "Gzn7YjXvxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+CLIENT_SECRET = "fbPy8SDIkcrxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# --- HELPER FUNCTIONS (SatuSehat) ---
+
+def fetch_ss_token():
+    """Mengambil token akses dari SatuSehat OAuth2."""
+    token_url = f"{AUTH_URL}/accesstoken?grant_type=client_credentials"
+    try:
+        resp = requests.post(token_url, data={"client_id": CLIENT_ID, "client_secret": CLIENT_SECRET}, timeout=15)
+        resp.raise_for_status()
+        return resp.json().get("access_token"), None
+    except Exception as e:
+        return None, str(e)
+
+def fhir_get(url, token):
+    """Helper untuk melakukan request GET ke FHIR SatuSehat."""
+    headers = {"Authorization": f"Bearer {token}", "Accept": "application/fhir+json"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=20)
+        return resp.json(), resp.status_code
+    except Exception as e:
+        return {"error": str(e)}, 502
+
+# --- HELPER FUNCTIONS (DICOM/PACS) ---
 
 def get_dicom_metadata(study_uid):
     """Mengambil Series dan SOP UID dari PACS."""
@@ -185,6 +213,40 @@ class DirectDicom(Resource):
         finally:
             if os.path.exists(local_path): 
                 os.remove(local_path)
+
+@dicom_ns.route('/imageid/<string:acsn>')
+@dicom_ns.doc(params={'acsn': 'Accession Number dari PACS/SatuSehat'})
+class ImageId(Resource):
+    def get(self, acsn):
+        """Ambil ImagingStudy ID dari SatuSehat berdasarkan Accession Number"""
+        token, err = fetch_ss_token()
+        if err:
+            logger.error(f"Auth SatuSehat failed: {err}")
+            return {"status": "error", "message": "Auth SatuSehat failed", "detail": err}, 502
+        
+        identifier_system = f"http://sys-ids.kemkes.go.id/acsn/{ORG_ID}"
+        url = f"{BASE_URL}/ImagingStudy?identifier={identifier_system}|{acsn}"
+        
+        data, status = fhir_get(url, token)
+        
+        if status != 200:
+            return {"status": "error", "detail": data}, status
+
+        if data.get("resourceType") == "Bundle":
+            entries = data.get("entry") or []
+            for e in entries:
+                res = e.get("resource") or {}
+                if res.get("resourceType") == "ImagingStudy":
+                    # Fix: Penggunaan logger.info yang benar
+                    logger.info(f"ImagingStudy found: {res.get('id')}")
+                    return {
+                        "status": "success",
+                        "imagingStudy_id": res.get("id"),
+                        "patient_reference": res.get("subject", {}).get("reference")
+                    }, 200
+
+        logger.error(f"No ImagingStudy found for Accession Number: {acsn}")    
+        return {"status": "error", "message": "No ImagingStudy found for this Accession Number"}, 404
 
 @app.route("/")
 def index():

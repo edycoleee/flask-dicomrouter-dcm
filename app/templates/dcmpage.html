@@ -37,6 +37,17 @@
         .nav-tabs .nav-link { color: #555; font-weight: 500; border: none; padding: 12px 15px; }
         .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
         
+        /* Result Box SatuSehat */
+        .result-box {
+            display: none;
+            background: #f8f9fa;
+            border-left: 4px solid #0dcaf0;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
         .btn-primary-gradient { background: linear-gradient(45deg, #0d6efd, #0043a8); border: none; }
     </style>
 </head>
@@ -68,6 +79,9 @@
                         </li>
                         <li class="nav-item">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i class="fa-solid fa-download me-1"></i> Save</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#satusehat"><i class="fa-solid fa-hospital me-1"></i> SatuSehat</button>
                         </li>
                     </ul>
                 </div>
@@ -142,6 +156,23 @@
                             </form>
                         </div>
 
+                        <div class="tab-pane fade" id="satusehat">
+                            <p class="small text-muted mb-2">Cari ID ImagingStudy berdasarkan Accession Number.</p>
+                            <div class="input-group mb-3">
+                                <input type="text" id="ssAccNo" class="form-control" placeholder="Contoh: 202512300002">
+                                <button class="btn btn-info text-white" type="button" onclick="searchSatuSehat()">Cari ID</button>
+                            </div>
+                            <div id="ssResult" class="result-box">
+                                <strong>ID Ditemukan:</strong><br>
+                                <code id="resId" class="text-primary"></code>
+                                <hr class="my-2">
+                                <strong>Subject:</strong> <span id="resSub"></span>
+                                <div class="mt-2">
+                                    <button class="btn btn-sm btn-outline-primary py-0" onclick="copyToClipboard()">Salin ID</button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -198,6 +229,40 @@
         entry.innerHTML = `<span class="timestamp">[${time}]</span> >> ${message}`;
         logConsole.appendChild(entry);
         logConsole.scrollTop = logConsole.scrollHeight;
+    }
+
+    // --- Fungsi Baru: Search SatuSehat ---
+    async function searchSatuSehat() {
+        const acsn = document.getElementById('ssAccNo').value;
+        const resBox = document.getElementById('ssResult');
+        if(!acsn) return alert("Masukkan Accession Number");
+
+        addLog(`[SATUSEHAT] Mencari data untuk Accession: ${acsn}`, 'warning');
+        resBox.style.display = 'none';
+
+        try {
+            const r = await fetch(`/api/dicom/imageid/${acsn}`);
+            const d = await r.json();
+            if(r.ok) {
+                document.getElementById('resId').innerText = d.imagingStudy_id;
+                document.getElementById('resSub').innerText = d.patient_reference || '-';
+                resBox.style.display = 'block';
+                addLog(`[SUCCESS] ImagingStudy ID ditemukan: ${d.imagingStudy_id}`);
+            } else {
+                addLog(`[FAILED] Data tidak ditemukan di SatuSehat.`, 'error');
+                alert("Data tidak ditemukan di SatuSehat.");
+            }
+        } catch(e) {
+            addLog(`[ERROR] Koneksi SatuSehat bermasalah.`, 'error');
+            alert("Terjadi kesalahan koneksi.");
+        }
+    }
+
+    function copyToClipboard() {
+        const id = document.getElementById('resId').innerText;
+        navigator.clipboard.writeText(id).then(() => {
+            alert("ID Berhasil disalin!");
+        });
     }
 
     // --- 1. API PROCESS (FETCH-EDIT-SEND) ---
@@ -294,8 +359,6 @@
         e.preventDefault();
         const studyUid = document.getElementById('save-study').value;
         addLog(`[SAVE] Menarik file dari PACS untuk download lokal...`, 'warning');
-
-        // Menggunakan redirect langsung ke endpoint GET
         window.location.href = `/api/dicom/download/${studyUid}`;
     });
 
@@ -303,7 +366,7 @@
     document.getElementById('btnClearTemp').addEventListener('click', async () => {
         if(!confirm("Hapus semua cache DICOM di server?")) return;
         try {
-            const resp = await fetch('/api/dicom/process', { method: 'DELETE' }); // Contoh jika endpoint delete ada di NS process
+            const resp = await fetch('/api/dicom/process', { method: 'DELETE' });
             addLog(`[SYSTEM] Folder temporary telah dibersihkan.`);
         } catch(e) {
             addLog(`[SYSTEM] Gagal membersihkan folder.`, 'error');

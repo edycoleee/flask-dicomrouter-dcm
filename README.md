@@ -11,7 +11,7 @@
 | POST   | /api/dicom/direct-dcm        | {"study": "UID"}           | Relay murni: download & langsung kirim.       |
 | POST   | /api/dicom/upload            | file, patientid, acc       | Upload dari PC, edit, lalu kirim.             |
 | GET    | /api/dicom/download/{uid}    | -                          | Download ke browser (Save as file).           |
-
+| GET    | /api/dicom/imageid/{acsn}    | -                          | Lihar Imaging Study ID setelah kirim ke satusehat           |
 
 | Code | Status        | Deskripsi                              | Penyebab Umum                                                     |
 |------|---------------|----------------------------------------|------------------------------------------------------------------|
@@ -48,7 +48,7 @@ WEB HTML
 
 ![deskripsi gambar](images/web-down-dcm.png)
 
-
+![deskripsi gambar](images/web-img-dcm.png)
 
 ### 2. SERVER PACS DCM4CHEE
 
@@ -379,3 +379,18 @@ Exception: ServiceRequest not found
 I: Encryption Config is False
 I: Deleting association folder
  ```
+
+ ### MEMASTIKAN IMAGE SUDAH DITERIMA OLEH SATUSEHAT
+
+ GET  http://192.168.171.123:5000/api/dicom/imageid/20250002
+
+ Lookup ImagingStudy by ACSN and return the ImagingStudy id.
+ 
+ 	
+Response body
+```json
+ {
+  "status": "success",
+  "imagingStudy_id": "75b7e9d0-c079-419c-84f8-8dba7b9cd585",
+  "patient_reference": "Patient/P104430137--"
+}
