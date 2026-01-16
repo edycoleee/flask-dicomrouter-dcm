@@ -199,8 +199,31 @@ http://192.168.30.14:5000/docs
 
 akses html-ui http://192.168.30.14:5000/
 
-aksea langsung api http://192.168.30.14:5000/api
+akses langsung api http://192.168.30.14:5000/api
 
+buat file .env
+```
+# --- DCM4CHEE ---
+DCM4CHEE_URL=http://192.10.10.23:8081/dcm4chee-arc/aets/DCM4CHEE
+
+# --- ROUTER STORESCU ---
+ROUTER_IP=192.10.10.51
+ROUTER_PORT=11112
+ROUTER_AET=DCMROUTER
+
+# --- LOGGING ---
+LOG_FILE=app_dicom.log
+
+# --- TEMP DIRECTORY ---
+TEMP_DIR=/tmp/dicom_gateway_tmp
+
+# --- SATUSEHAT ---
+AUTH_URL = https://api-satusehat.kemkes.go.id/oauth2/v1
+BASE_URL = https://api-satusehat.kemkes.go.id/fhir-r4/v1
+ORG_ID = 
+CLIENT_ID = 
+CLIENT_SECRET = 
+```
 
 ### RESPONSE DARI DICOM ROUTER 
 
