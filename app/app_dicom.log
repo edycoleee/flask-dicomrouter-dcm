@@ -30,3 +30,11 @@ F: Association Request Failed: 0006:031c TCP Initialization Error: Connection ti
 2026-01-09 08:50:32,226 - INFO - ImagingStudy found: 75b7e9d0-c079-419c-84f8-8dba7b9cd585
 2026-01-09 08:50:54,972 - ERROR - No ImagingStudy found for Accession Number: 20250001
 2026-01-09 08:55:51,308 - INFO - ImagingStudy found: 75b7e9d0-c079-419c-84f8-8dba7b9cd585
+2026-01-16 13:03:39,524 - ERROR - Auth SatuSehat failed: 401 Client Error: Unauthorized for url: https://api-satusehat.kemkes.go.id/oauth2/v1/accesstoken?grant_type=client_credentials
+2026-01-16 13:04:35,255 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-16 13:10:16,768 - INFO - [DIRECT-DCM2] Cari DICOM berdasarkan accession=2026100001321
+2026-01-16 13:10:54,931 - INFO - [DIRECT-DCM2] Cari DICOM berdasarkan accession=2026100001321
+2026-01-16 13:13:38,427 - INFO - [DIRECT-DCM2] Cari DICOM berdasarkan accession=2026100001321
+2026-01-16 13:21:22,951 - INFO - [DIRECT-DCM2] Cari DICOM berdasarkan accession=2026100001321 
+2026-01-16 13:21:32,124 - ERROR - No ImagingStudy found for Accession Number: 2026100001321
+2026-01-16 13:27:34,877 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9

@@ -33,11 +33,11 @@ dicom_model = dicom_ns.model('DicomSend', {
 })
 
 # --- SATUSEHAT CONFIG (Sesuaikan di config.py jika perlu) ---
-AUTH_URL = "https://api-satusehat.kemkes.go.id/oauth2/v1"
-BASE_URL = "https://api-satusehat.kemkes.go.id/fhir-r4/v1"
-ORG_ID = "10002xxxx"
-CLIENT_ID = "Gzn7YjXvxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-CLIENT_SECRET = "fbPy8SDIkcrxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+AUTH_URL = Config.AUTH_URL
+BASE_URL = Config.BASE_URL
+ORG_ID = Config.ORG_ID
+CLIENT_ID = Config.CLIENT_ID
+CLIENT_SECRET = Config.CLIENT_SECRET
 
 # --- HELPER FUNCTIONS (SatuSehat) ---
 
@@ -111,6 +111,35 @@ def send_to_router(file_path):
     result = subprocess.run(cmd, capture_output=True, text=True)
     if "Received Store Response (Success)" not in (result.stdout + result.stderr):
         raise Exception(f"StoreSCU Failed: {result.stderr}")
+
+def find_dicom_by_accession(acc_num):
+    """Cari Study, Series, SOP berdasarkan Accession Number."""
+    url = f"{Config.DCM4CHEE_URL}/rs/studies?AccessionNumber={acc_num}"
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+    studies = resp.json()
+
+    if not studies:
+        raise Exception(f"Tidak ditemukan study dengan accession {acc_num}")
+
+    study = studies[0]
+    study_uid = study["0020000D"]["Value"][0]
+
+    # Ambil metadata lengkap untuk series + SOP
+    meta_url = f"{Config.DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
+    meta_resp = requests.get(meta_url, timeout=10)
+    meta_resp.raise_for_status()
+    meta = meta_resp.json()
+
+    series_uid = meta[0]["0020000E"]["Value"][0]
+    sop_uid = meta[0]["00080018"]["Value"][0]
+
+    return {
+        "study": study_uid,
+        "series": series_uid,
+        "sop": sop_uid
+    }
+
 
 # --- API ENDPOINTS ---
 
@@ -212,6 +241,57 @@ class DirectDicom(Resource):
             return {"status": "error", "message": str(e)}, 500
         finally:
             if os.path.exists(local_path): 
+                os.remove(local_path)
+
+@dicom_ns.route('/direct-dcm2')
+class DirectDicom2(Resource):
+    @dicom_ns.expect(api.model('Direct2', {
+        'accesionnum': fields.String(required=True)
+        #'patientid': fields.String(required=False)
+    }))
+    def post(self):
+        """Direct kirim DICOM berdasarkan Accession Number (tanpa study UID)."""
+        data = dicom_ns.payload
+        acc_num = data['accesionnum']
+        #patient_id = data.get('patientid')
+
+        try:
+            logger.info(f"[DIRECT-DCM2] Cari DICOM berdasarkan accession={acc_num}")
+
+            # 1. Cari StudyUID, SeriesUID, SOPUID dari accession
+            meta_info = find_dicom_by_accession(acc_num)
+
+            study_uid = meta_info['study']
+            meta = {
+                "series": meta_info['series'],
+                "sop": meta_info['sop']
+            }
+
+            # 2. Tentukan file temp
+            local_path = os.path.join(Config.TEMP_DIR, f"relay_acc_{acc_num}.dcm")
+
+            # 3. Download DICOM via helper download_wado()
+            download_wado(study_uid, meta, local_path)
+
+            # 4. Modify DICOM (opsional)
+            # modify_dicom(local_path, patient_id=patient_id, acc_num=acc_num)
+
+            # 5. Kirim ke router
+            send_to_router(local_path)
+
+            return {
+                "status": "success",
+                "message": "DICOM berhasil dikirim berdasarkan accession number",
+                "accesionnum": acc_num,
+                "study_uid": study_uid
+            }, 200
+
+        except Exception as e:
+            logger.error(f"[DIRECT-DCM2 FAILED] {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+
+        finally:
+            if 'local_path' in locals() and os.path.exists(local_path):
                 os.remove(local_path)
 
 @dicom_ns.route('/imageid/<string:acsn>')

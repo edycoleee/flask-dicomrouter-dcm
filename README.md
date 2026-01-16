@@ -9,6 +9,7 @@
 |--------|------------------------------|----------------------------|-----------------------------------------------|
 | POST   | /api/dicom/process           | study, patientid, acc      | Download, edit metadata, lalu kirim.          |
 | POST   | /api/dicom/direct-dcm        | {"study": "UID"}           | Relay murni: download & langsung kirim.       |
+| POST   | /api/dicom/direct-dcm2       | {"accesionnum": "ACSN"}    | Relay murni: download & langsung kirim.       |
 | POST   | /api/dicom/upload            | file, patientid, acc       | Upload dari PC, edit, lalu kirim.             |
 | GET    | /api/dicom/download/{uid}    | -                          | Download ke browser (Save as file).           |
 | GET    | /api/dicom/imageid/{acsn}    | -                          | Lihar Imaging Study ID setelah kirim ke satusehat           |
@@ -56,7 +57,7 @@ WEB HTML
 - Sudah punya server PACS dengan DCM4CHE
 
 ```
-PASTIKAN 3 API INI TERSEDIA DAN BISA DIAKSES 
+PASTIKAN 4 API INI TERSEDIA DAN BISA DIAKSES 
 
 1. API DCM4CHE melihat metadata dari server pacs
 http://<-ip-pacs-dcm4che>:8081/dcm4chee-arc/aets/DCM4CHEE/rs/studies/1.3.46.670589.30.39.0.1.966169802732.1695243280236.1/metadata
@@ -67,6 +68,10 @@ http://<-ip-pacs-dcm4che>:8081/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&
 3. API DCM4CHE download file dcm dari server pacs ke file lokal dengan nama file
 curl -X GET "http://<-ip-pacs-dcm4che>:8081/dcm4chee-arc/aets/DCM4CHEE/wado?requestType=WADO&studyUID=1.3.46.670589.30.39.0.1.966169802732.1695243280236.1&seriesUID=1.3.46.670589.30.39.0.1.966169802732.1695243642250.1&objectUID=1.3.46.670589.30.39.0.1.966169802732.1695243642379.1&contentType=application/dicom" \ 
 -o gambar_pasien.dcm   
+
+4. API DCM4CHE mencari data dari server pacs
+http://<-ip-pacs-dcm4che>/dcm4chee-arc/aets/DCM4CHEE/rs/studies?AccessionNumber=2026100001321 
+http://<-ip-pacs-dcm4che>/dcm4chee-arc/aets/DCM4CHEE/rs/studies?PatientID=00030983 
 
 ```
 
@@ -172,7 +177,7 @@ source venv/bin/activate # Windows: venv\Scripts\activate
 pip install --upgrade pip
 
 # Install package yang diperlukan
-pip install flask flask-restx requests werkzeug
+pip install flask flask-restx requests werkzeug python-dotenv 
 
 cd app
 python app.py
