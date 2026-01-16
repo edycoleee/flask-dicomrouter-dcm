@@ -8,6 +8,8 @@ services:
       - "5000:5000"
     volumes:
       - ./logs:/app/logs # Log masuk ke folder logs di host
+    env_file: 
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
       # SETTING JARINGAN DI SINI:
