@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DICOM Gateway Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -14,10 +15,23 @@
             --console-text: #00ff00;
         }
 
-        body { background-color: var(--bg-color); font-family: 'Segoe UI', sans-serif; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .card-header { background: #fff !important; font-weight: bold; border-bottom: 1px solid #eee; }
-        
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            background: #fff !important;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+        }
+
         /* Log Console Style */
         .log-container {
             background: var(--console-bg);
@@ -30,13 +44,34 @@
             border-radius: 8px;
             border: 2px solid #333;
         }
-        .log-entry { margin-bottom: 5px; border-bottom: 1px solid #2a2a2a; padding-bottom: 2px; line-height: 1.4; }
-        .timestamp { color: #888; font-size: 11px; margin-right: 8px; }
-        
+
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 2px;
+            line-height: 1.4;
+        }
+
+        .timestamp {
+            color: #888;
+            font-size: 11px;
+            margin-right: 8px;
+        }
+
         /* Tab Styling */
-        .nav-tabs .nav-link { color: #555; font-weight: 500; border: none; padding: 12px 15px; }
-        .nav-tabs .nav-link.active { color: #0d6efd; border-bottom: 3px solid #0d6efd; background: transparent; }
-        
+        .nav-tabs .nav-link {
+            color: #555;
+            font-weight: 500;
+            border: none;
+            padding: 12px 15px;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            border-bottom: 3px solid #0d6efd;
+            background: transparent;
+        }
+
         /* Result Box SatuSehat */
         .result-box {
             display: none;
@@ -48,386 +83,482 @@
             font-size: 0.9rem;
         }
 
-        .btn-primary-gradient { background: linear-gradient(45deg, #0d6efd, #0043a8); border: none; }
+        .btn-primary-gradient {
+            background: linear-gradient(45deg, #0d6efd, #0043a8);
+            border: none;
+        }
     </style>
 </head>
+
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fa-solid fa-microchip me-2 text-info"></i>DICOM Gateway <span
+                    class="badge bg-secondary ms-2">v1.1</span></a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-warning" href="/api/docs" target="_blank"><i class="fa-solid fa-code me-1"></i>
+                    Swagger API Docs</a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-        <a class="navbar-brand" href="#"><i class="fa-solid fa-microchip me-2 text-info"></i>DICOM Gateway <span class="badge bg-secondary ms-2">v1.1</span></a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link text-warning" href="/api/docs" target="_blank"><i class="fa-solid fa-code me-1"></i> Swagger API Docs</a>
-        </div>
-    </div>
-</nav>
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header py-3">
+                        <ul class="nav nav-tabs card-header-tabs" id="dicomTab" role="tablist">
+                            <li class="nav-item">
+                                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-process"><i
+                                        class="fa-solid fa-wand-magic-sparkles me-1"></i> Process</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct"><i
+                                        class="fa-solid fa-bolt me-1"></i> Direct</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct2"><i
+                                        class="fa-solid fa-bolt me-1"></i> Direct by Accession</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload"><i
+                                        class="fa-solid fa-upload me-1"></i> Upload</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i
+                                        class="fa-solid fa-download me-1"></i> Save</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#satusehat"><i
+                                        class="fa-solid fa-hospital me-1"></i> SatuSehat</button>
+                            </li>
+                        </ul>
+                    </div>
 
-<div class="container">
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header py-3">
-                    <ul class="nav nav-tabs card-header-tabs" id="dicomTab" role="tablist">
-                        <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-process"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> Process</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct"><i class="fa-solid fa-bolt me-1"></i> Direct</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-direct2"><i class="fa-solid fa-bolt me-1"></i> Direct by Accession</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload"><i class="fa-solid fa-upload me-1"></i> Upload</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i class="fa-solid fa-download me-1"></i> Save</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#satusehat"><i class="fa-solid fa-hospital me-1"></i> SatuSehat</button>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="card-body p-4">
-                    <div class="tab-content">
-                        
-                        <div class="tab-pane fade show active" id="tab-process">
-                            <p class="text-muted small">Ambil dari PACS, ubah metadata, lalu teruskan ke Router.</p>
-                            <form id="formProcess">
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold">Study Instance UID</label>
-                                    <input type="text" class="form-control" id="proc-study" placeholder="1.3.46.67..." required>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col">
-                                        <label class="form-label small fw-bold">New Patient ID</label>
-                                        <input type="text" class="form-control" id="proc-pid" placeholder="PID-XXXX">
+                    <div class="card-body p-4">
+                        <div class="tab-content">
+
+                            <div class="tab-pane fade show active" id="tab-process">
+                                <p class="text-muted small">Ambil dari PACS, ubah metadata, lalu teruskan ke Router.</p>
+                                <form id="formProcess">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Study Instance UID</label>
+                                        <input type="text" class="form-control" id="proc-study"
+                                            placeholder="1.3.46.67..." required>
                                     </div>
-                                    <div class="col">
-                                        <label class="form-label small fw-bold">New Accession</label>
-                                        <input type="text" class="form-control" id="proc-acc" placeholder="ACC-XXXX">
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">New Patient ID</label>
+                                            <input type="text" class="form-control" id="proc-pid"
+                                                placeholder="PID-XXXX">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">New Accession</label>
+                                            <input type="text" class="form-control" id="proc-acc"
+                                                placeholder="ACC-XXXX">
+                                        </div>
                                     </div>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100 fw-bold">EKSEKUSI PROSES</button>
-                            </form>
-                        </div>
-
-                        <div class="tab-pane fade" id="tab-direct">
-                            <p class="text-muted small">Relay murni: Pindahkan data asli dari PACS langsung ke Router.</p>
-                            <form id="formDirect">
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold">Study Instance UID</label>
-                                    <input type="text" class="form-control" id="direct-study" placeholder="UID Study untuk Relay..." required>
-                                </div>
-                                <div class="alert alert-info py-2 small border-0 bg-light">
-                                    <i class="fa-solid fa-circle-info me-2 text-info"></i> Tanpa modifikasi tag DICOM.
-                                </div>
-                                <button type="submit" class="btn btn-warning w-100 fw-bold">KIRIM DIRECT (RELAY)</button>
-                            </form>
-                        </div>
-
-                        <div class="tab-pane fade" id="tab-direct2">
-                            <p class="text-muted small">Relay berdasarkan Accession Number (tanpa perlu Study UID).</p>
-
-                            <form id="formDirect2">
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold">Accession Number</label>
-                                    <input type="text" class="form-control" id="direct-accession" placeholder="Masukkan Accession Number..." required>
-                                </div>
-
-                                <div class="alert alert-info py-2 small border-0 bg-light">
-                                    <i class="fa-solid fa-circle-info me-2 text-info"></i>
-                                    Sistem akan mencari Study, Series, dan SOP secara otomatis dari DCM4CHEE.
-                                </div>
-
-                                <button type="submit" class="btn btn-primary w-100 fw-bold">KIRIM DIRECT BY ACCESSION</button>
-                            </form>
-                        </div>
-
-
-                        <div class="tab-pane fade" id="tab-upload">
-                            <p class="text-muted small">Upload file lokal, modifikasi, lalu kirim ke Router.</p>
-                            <form id="formUpload">
-                                <div class="mb-3">
-                                    <label class="form-label small fw-bold">File DICOM (.dcm)</label>
-                                    <input type="file" class="form-control" id="upload-file" accept=".dcm" required>
-                                </div>
-                                <div class="row mb-3">
-                                    <div class="col">
-                                        <label class="form-label small fw-bold">New Patient ID</label>
-                                        <input type="text" class="form-control" id="upload-pid">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label small fw-bold">New Accession</label>
-                                        <input type="text" class="form-control" id="upload-acc">
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-success w-100 fw-bold">UPLOAD & TRANSMIT</button>
-                            </form>
-                        </div>
-                        
-                        <div class="tab-pane fade" id="tab-save">
-                            <p class="text-muted small">Ambil file dari PACS dan simpan di komputer ini.</p>
-                            <form id="formSave">
-                                <div class="mb-4">
-                                    <label class="form-label small fw-bold">Study Instance UID</label>
-                                    <input type="text" class="form-control" id="save-study" placeholder="UID Study..." required>
-                                </div>
-                                <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE PC</button>
-                            </form>
-                        </div>
-
-                        <div class="tab-pane fade" id="satusehat">
-                            <p class="small text-muted mb-2">Cari ID ImagingStudy berdasarkan Accession Number.</p>
-                            <div class="input-group mb-3">
-                                <input type="text" id="ssAccNo" class="form-control" placeholder="Contoh: 202512300002">
-                                <button class="btn btn-info text-white" type="button" onclick="searchSatuSehat()">Cari ID</button>
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold">EKSEKUSI PROSES</button>
+                                </form>
                             </div>
-                            <div id="ssResult" class="result-box">
-                                <strong>ID Ditemukan:</strong><br>
-                                <code id="resId" class="text-primary"></code>
-                                <hr class="my-2">
-                                <strong>Subject:</strong> <span id="resSub"></span>
-                                <div class="mt-2">
-                                    <button class="btn btn-sm btn-outline-primary py-0" onclick="copyToClipboard()">Salin ID</button>
+
+                            <div class="tab-pane fade" id="tab-direct">
+                                <p class="text-muted small">Relay murni: Pindahkan data asli dari PACS langsung ke
+                                    Router.</p>
+                                <form id="formDirect">
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold">Study Instance UID</label>
+                                        <input type="text" class="form-control" id="direct-study"
+                                            placeholder="UID Study untuk Relay..." required>
+                                    </div>
+                                    <div class="alert alert-info py-2 small border-0 bg-light">
+                                        <i class="fa-solid fa-circle-info me-2 text-info"></i> Tanpa modifikasi tag
+                                        DICOM.
+                                    </div>
+                                    <button type="submit" class="btn btn-warning w-100 fw-bold">KIRIM DIRECT
+                                        (RELAY)</button>
+                                </form>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-direct2">
+                                <p class="text-muted small">Relay berdasarkan Accession Number (tanpa perlu Study UID).
+                                </p>
+
+                                <form id="formDirect2">
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold">Accession Number</label>
+                                        <input type="text" class="form-control" id="direct-accession"
+                                            placeholder="Masukkan Accession Number..." required>
+                                    </div>
+
+                                    <div class="alert alert-info py-2 small border-0 bg-light">
+                                        <i class="fa-solid fa-circle-info me-2 text-info"></i>
+                                        Sistem akan mencari Study, Series, dan SOP secara otomatis dari DCM4CHEE.
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold">KIRIM DIRECT BY
+                                        ACCESSION</button>
+                                </form>
+                            </div>
+
+
+                            <div class="tab-pane fade" id="tab-upload">
+                                <p class="text-muted small">Upload file lokal, modifikasi, lalu kirim ke Router.</p>
+                                <form id="formUpload">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">File DICOM (.dcm)</label>
+                                        <input type="file" class="form-control" id="upload-file" accept=".dcm" required>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">New Patient ID</label>
+                                            <input type="text" class="form-control" id="upload-pid">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">New Accession</label>
+                                            <input type="text" class="form-control" id="upload-acc">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success w-100 fw-bold">UPLOAD &
+                                        TRANSMIT</button>
+                                </form>
+                            </div>
+
+                            <div class="tab-pane fade" id="tab-save">
+                                <p class="text-muted small">Ambil file dari PACS dan simpan di komputer ini.</p>
+                                <form id="formSave">
+                                    <div class="mb-4">
+                                        <label class="form-label small fw-bold">Study Instance UID</label>
+                                        <input type="text" class="form-control" id="save-study"
+                                            placeholder="UID Study..." required>
+                                    </div>
+                                    <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE
+                                        PC</button>
+                                </form>
+                            </div>
+
+                            <div class="tab-pane fade" id="satusehat">
+                                <p class="small text-muted mb-2">Cari ID ImagingStudy berdasarkan Accession Number.</p>
+                                <div class="input-group mb-3">
+                                    <input type="text" id="ssAccNo" class="form-control"
+                                        placeholder="Contoh: 202512300002">
+                                    <button class="btn btn-info text-white" type="button"
+                                        onclick="searchSatuSehat()">Cari ID</button>
+                                </div>
+                                <div id="ssResult" class="result-box">
+                                    <strong>ID Ditemukan:</strong><br>
+                                    <code id="resId" class="text-primary"></code>
+                                    <hr class="my-2">
+                                    <strong>Subject:</strong> <span id="resSub"></span>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-primary py-0"
+                                            onclick="copyToClipboard()">Salin ID</button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-lg-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-header d-flex justify-content-between align-items-center py-3">
-                    <span><i class="fa-solid fa-terminal me-2 text-success"></i>Gateway Logic Monitor</span>
-                    <button class="btn btn-sm btn-outline-danger border-0" onclick="document.getElementById('logConsole').innerHTML='' ">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-                <div class="card-body">
-                    <div class="log-container" id="logConsole">
-                        <div class="log-entry text-muted">>> Gateway Engine Standby...</div>
+            <div class="col-lg-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3">
+                        <span><i class="fa-solid fa-terminal me-2 text-success"></i>Gateway Logic Monitor</span>
+                        <button class="btn btn-sm btn-outline-danger border-0"
+                            onclick="document.getElementById('logConsole').innerHTML='' ">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </div>
-                </div>
-                <div class="card-footer bg-white border-0 p-3 text-center">
-                    <button class="btn btn-sm btn-light text-danger fw-bold" id="btnClearTemp">
-                        <i class="fa-solid fa-broom me-1"></i> Purge Temporary Files
-                    </button>
+                    <div class="card-body">
+                        <div class="log-container" id="logConsole">
+                            <div class="log-entry text-muted">>> Gateway Engine Standby...</div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 p-3 text-center">
+                        <button class="btn btn-sm btn-light text-danger fw-bold" id="btnClearTemp">
+                            <i class="fa-solid fa-broom me-1"></i> Purge Temporary Files
+                        </button>
+                    </div>
+                    <div id="alertBox" class="alert d-none" role="alert"></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 bg-transparent text-center">
-            <div class="spinner-border text-light mx-auto mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-            <h4 class="text-white">Executing Task...</h4>
-            <p class="text-light opacity-75">Sistem sedang memproses data DICOM Anda.</p>
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 bg-transparent text-center">
+                <div class="spinner-border text-light mx-auto mb-3" style="width: 3.5rem; height: 3.5rem;"
+                    role="status"></div>
+                <h4 class="text-white">Executing Task...</h4>
+                <p class="text-light opacity-75">Sistem sedang memproses data DICOM Anda.</p>
+            </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-    const logConsole = document.getElementById('logConsole');
+    <script>
 
-    function addLog(message, type = 'info') {
-        const time = new Date().toLocaleTimeString('id-ID');
-        let color = "#00ff00"; 
-        if(type === 'error') color = "#ff4d4d";
-        if(type === 'warning') color = "#ffcc00";
+        function showAlert(message, type = "info") {
+            const box = document.getElementById('alertBox');
+            box.className = `alert alert-${type}`;
+            box.textContent = message;
+            box.classList.remove('d-none');
 
-        const entry = document.createElement('div');
-        entry.className = "log-entry";
-        entry.style.color = color;
-        entry.innerHTML = `<span class="timestamp">[${time}]</span> >> ${message}`;
-        logConsole.appendChild(entry);
-        logConsole.scrollTop = logConsole.scrollHeight;
-    }
-
-    // --- Fungsi Baru: Search SatuSehat ---
-    async function searchSatuSehat() {
-        const acsn = document.getElementById('ssAccNo').value;
-        const resBox = document.getElementById('ssResult');
-        if(!acsn) return alert("Masukkan Accession Number");
-
-        addLog(`[SATUSEHAT] Mencari data untuk Accession: ${acsn}`, 'warning');
-        resBox.style.display = 'none';
-
-        try {
-            const r = await fetch(`/api/dicom/imageid/${acsn}`);
-            const d = await r.json();
-            if(r.ok) {
-                document.getElementById('resId').innerText = d.imagingStudy_id;
-                document.getElementById('resSub').innerText = d.patient_reference || '-';
-                resBox.style.display = 'block';
-                addLog(`[SUCCESS] ImagingStudy ID ditemukan: ${d.imagingStudy_id}`);
-            } else {
-                addLog(`[FAILED] Data tidak ditemukan di SatuSehat.`, 'error');
-                alert("Data tidak ditemukan di SatuSehat.");
-            }
-        } catch(e) {
-            addLog(`[ERROR] Koneksi SatuSehat bermasalah.`, 'error');
-            alert("Terjadi kesalahan koneksi.");
+            // Auto hide setelah 4 detik
+            setTimeout(() => {
+                box.classList.add('d-none');
+            }, 4000);
         }
-    }
 
-    function copyToClipboard() {
-        const id = document.getElementById('resId').innerText;
-        navigator.clipboard.writeText(id).then(() => {
-            alert("ID Berhasil disalin!");
+
+        //const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        const logConsole = document.getElementById('logConsole');
+
+        const loadingModalEl = document.getElementById('loadingModal');
+        const loadingModal = bootstrap.Modal.getOrCreateInstance(loadingModalEl);
+
+        function addLog(message, type = 'info') {
+            const time = new Date().toLocaleTimeString('id-ID');
+            let color = "#00ff00";
+            if (type === 'error') color = "#ff4d4d";
+            if (type === 'warning') color = "#ffcc00";
+
+            const entry = document.createElement('div');
+            entry.className = "log-entry";
+            entry.style.color = color;
+            entry.innerHTML = `<span class="timestamp">[${time}]</span> >> ${message}`;
+            logConsole.appendChild(entry);
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+
+        // --- Fungsi Baru: Search SatuSehat ---
+        async function searchSatuSehat() {
+            const acsn = document.getElementById('ssAccNo').value;
+            const resBox = document.getElementById('ssResult');
+            if (!acsn) return alert("Masukkan Accession Number");
+
+            addLog(`[SATUSEHAT] Mencari data untuk Accession: ${acsn}`, 'warning');
+            resBox.style.display = 'none';
+
+            try {
+                const r = await fetch(`/api/dicom/imageid/${acsn}`);
+                const d = await r.json();
+                if (r.ok) {
+                    document.getElementById('resId').innerText = d.imagingStudy_id;
+                    document.getElementById('resSub').innerText = d.patient_reference || '-';
+                    resBox.style.display = 'block';
+                    addLog(`[SUCCESS] ImagingStudy ID ditemukan: ${d.imagingStudy_id}`);
+                } else {
+                    addLog(`[FAILED] Data tidak ditemukan di SatuSehat.`, 'error');
+                    alert("Data tidak ditemukan di SatuSehat.");
+                }
+            } catch (e) {
+                addLog(`[ERROR] Koneksi SatuSehat bermasalah.`, 'error');
+                alert("Terjadi kesalahan koneksi.");
+            }
+        }
+
+        function copyToClipboard() {
+            const id = document.getElementById('resId').innerText;
+            navigator.clipboard.writeText(id).then(() => {
+                alert("ID Berhasil disalin!");
+            });
+        }
+
+document.getElementById('formProcess').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        study: document.getElementById('proc-study').value,
+        patientid: document.getElementById('proc-pid').value,
+        accesionnum: document.getElementById('proc-acc').value
+    };
+
+    showAlert(`Memproses Study UID: ${payload.study}`, "warning");
+    addLog(`[PROCESS] Memulai alur modifikasi untuk Study: ${payload.study}`, 'warning');
+
+    try {
+        const resp = await fetch('/api/dicom/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
+
+        let res = {};
+        try {
+            res = await resp.json();
+        } catch {
+            res = { message: "Invalid JSON response" };
+        }
+
+        if (resp.ok) {
+            showAlert(`Data berhasil dimodifikasi dan dikirim ke Router`, "success");
+            addLog(`[SUCCESS] Data terkirim ke Router!`, 'info');
+        } else {
+            showAlert(`Gagal memproses: ${res.message}`, "danger");
+            addLog(`[FAILED] Server Response: ${res.message || 'Error'}`, 'error');
+        }
+
+    } catch (err) {
+        showAlert(`Network Error: ${err}`, "danger");
+        addLog(`[ERROR] Gagal menghubungi API: ${err.message}`, 'error');
     }
+});
 
-    // --- 1. API PROCESS (FETCH-EDIT-SEND) ---
-    document.getElementById('formProcess').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const payload = {
-            study: document.getElementById('proc-study').value,
-            patientid: document.getElementById('proc-pid').value,
-            accesionnum: document.getElementById('proc-acc').value
-        };
 
-        loadingModal.show();
-        addLog(`[PROCESS] Memulai alur modifikasi untuk Study: ${payload.study}`);
+        document.getElementById('formDirect').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studyUid = document.getElementById('direct-study').value;
 
-        try {
-            const resp = await fetch('/api/dicom/process', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const res = await resp.json();
-            if (resp.ok) {
-                addLog(`[SUCCESS] Data terkirim ke Router!`, 'info');
-            } else {
-                addLog(`[FAILED] Server Response: ${res.message || 'Error'}`, 'error');
+            showAlert(`Memproses direct transfer untuk Study UID: ${studyUid}`, "warning");
+            addLog(`[RELAY] Menjalankan Direct Transfer (Tanpa Edit): ${studyUid}`, 'warning');
+
+            try {
+                const resp = await fetch('/api/dicom/direct-dcm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ study: studyUid })
+                });
+
+                let res = {};
+                try {
+                    res = await resp.json();
+                } catch {
+                    res = { message: "Invalid JSON response" };
+                }
+
+                if (resp.ok) {
+                    showAlert(`Relay Study ${studyUid} berhasil`, "success");
+                    addLog(`[SUCCESS] Relay Study ${studyUid} Berhasil.`, 'info');
+                } else {
+                    showAlert(`Relay gagal: ${res.message}`, "danger");
+                    addLog(`[ERROR] Relay Gagal: ${res.message}`, 'error');
+                }
+
+            } catch (err) {
+                showAlert(`Network Error: ${err}`, "danger");
+                addLog(`[CRITICAL] Network Error: ${err}`, 'error');
             }
-        } catch (err) {
-            addLog(`[ERROR] Gagal menghubungi API: ${err.message}`, 'error');
-        } finally {
-            loadingModal.hide();
-        }
-    });
+        });
 
-    // --- 2. API DIRECT (RELAY) ---
-    document.getElementById('formDirect').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const studyUid = document.getElementById('direct-study').value;
+        // --- 3. API UPLOAD ---
+        document.getElementById('formUpload').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        loadingModal.show();
-        addLog(`[RELAY] Menjalankan Direct Transfer (Tanpa Edit): ${studyUid}`, 'warning');
+            const fileInput = document.getElementById('upload-file');
+            const patientId = document.getElementById('upload-pid').value;
+            const accNum = document.getElementById('upload-acc').value;
 
-        try {
-            const resp = await fetch('/api/dicom/direct-dcm', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ study: studyUid })
-            });
-            const res = await resp.json();
-            if (resp.ok) {
-                addLog(`[SUCCESS] Relay Study ${studyUid} Berhasil.`, 'info');
-            } else {
-                addLog(`[ERROR] Relay Gagal: ${res.message}`, 'error');
+            // Validasi file
+            if (!fileInput.files.length) {
+                showAlert("Silakan pilih file DICOM terlebih dahulu", "danger");
+                addLog(`[FAILED] Tidak ada file yang dipilih.`, 'error');
+                return;
             }
-        } catch (err) {
-            addLog(`[CRITICAL] Network Error.`, 'error');
-        } finally {
-            loadingModal.hide();
-        }
-    });
 
-    // --- 3. API UPLOAD ---
-    document.getElementById('formUpload').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fileInput = document.getElementById('upload-file');
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('patientid', document.getElementById('upload-pid').value);
-        formData.append('accesionnum', document.getElementById('upload-acc').value);
+            const fileName = fileInput.files[0].name;
 
-        loadingModal.show();
-        addLog(`[UPLOAD] Mengunggah dan memodifikasi: ${fileInput.files[0].name}`);
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('patientid', patientId);
+            formData.append('accesionnum', accNum);
 
-        try {
-            const resp = await fetch('/api/dicom/upload', {
-                method: 'POST',
-                body: formData
-            });
-            const res = await resp.json();
-            if (resp.ok) {
-                addLog(`[SUCCESS] File diupload dan berhasil diteruskan ke Router.`, 'info');
-                e.target.reset();
-            } else {
-                addLog(`[FAILED] ${res.message}`, 'error');
+            showAlert(`Mengunggah dan memodifikasi file: ${fileName}`, "warning");
+            addLog(`[UPLOAD] Mengunggah dan memodifikasi: ${fileName}`, 'warning');
+
+            try {
+                const resp = await fetch('/api/dicom/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                let res = {};
+                try {
+                    res = await resp.json();
+                } catch {
+                    res = { message: "Invalid JSON response" };
+                }
+
+                if (resp.ok) {
+                    showAlert(`File ${fileName} berhasil diteruskan ke Router`, "success");
+                    addLog(`[SUCCESS] File diupload dan berhasil diteruskan ke Router.`, 'info');
+                    e.target.reset();
+                } else {
+                    showAlert(`Upload gagal: ${res.message}`, "danger");
+                    addLog(`[FAILED] ${res.message}`, 'error');
+                }
+
+            } catch (err) {
+                showAlert(`Network Error: ${err}`, "danger");
+                addLog(`[ERROR] Gagal upload: ${err}`, 'error');
             }
-        } catch (err) {
-            addLog(`[ERROR] Gagal upload.`, 'error');
-        } finally {
-            loadingModal.hide();
-        }
-    });
-
-    // --- 4. API SAVE (DOWNLOAD) ---
-    document.getElementById('formSave').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const studyUid = document.getElementById('save-study').value;
-        addLog(`[SAVE] Menarik file dari PACS untuk download lokal...`, 'warning');
-        window.location.href = `/api/dicom/download/${studyUid}`;
-    });
-
-    // --- EXTRA: CLEAR TEMP ---
-    document.getElementById('btnClearTemp').addEventListener('click', async () => {
-        if(!confirm("Hapus semua cache DICOM di server?")) return;
-        try {
-            const resp = await fetch('/api/dicom/process', { method: 'DELETE' });
-            addLog(`[SYSTEM] Folder temporary telah dibersihkan.`);
-        } catch(e) {
-            addLog(`[SYSTEM] Gagal membersihkan folder.`, 'error');
-        }
-    });
+        });
 
 
-    // --- 3. API DIRECT BY ACCESSION ---
-    document.getElementById('formDirect2').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const accNum = document.getElementById('direct-accession').value;
+        // --- 4. API SAVE (DOWNLOAD) ---
+        document.getElementById('formSave').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const studyUid = document.getElementById('save-study').value;
+            addLog(`[SAVE] Menarik file dari PACS untuk download lokal...`, 'warning');
+            window.location.href = `/api/dicom/download/${studyUid}`;
+        });
 
-        loadingModal.show();
-        addLog(`[RELAY-ACC] Menjalankan Direct Transfer berdasarkan Accession: ${accNum}`, 'warning');
-
-        try {
-            const resp = await fetch('/api/dicom/direct-dcm2', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accesionnum: accNum })
-            });
-
-            const res = await resp.json();
-
-            if (resp.ok) {
-                addLog(`[SUCCESS] Relay Accession ${accNum} Berhasil.`, 'info');
-            } else {
-                addLog(`[ERROR] Relay Gagal: ${res.message}`, 'error');
+        // --- EXTRA: CLEAR TEMP ---
+        document.getElementById('btnClearTemp').addEventListener('click', async () => {
+            if (!confirm("Hapus semua cache DICOM di server?")) return;
+            try {
+                const resp = await fetch('/api/dicom/process', { method: 'DELETE' });
+                addLog(`[SYSTEM] Folder temporary telah dibersihkan.`);
+            } catch (e) {
+                addLog(`[SYSTEM] Gagal membersihkan folder.`, 'error');
             }
-        } catch (err) {
-            addLog(`[CRITICAL] Network Error.`, 'error');
-        } finally {
-            loadingModal.hide();
-        }
-    });
+        });
+
+
+        document.getElementById('formDirect2').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const accNum = document.getElementById('direct-accession').value;
+
+            showAlert(`Memproses direct transfer untuk accession: ${accNum}`, "warning");
+            addLog(`[RELAY-ACC] Mulai proses direct untuk ${accNum}`, 'warning');
+
+            try {
+                const resp = await fetch('/api/dicom/direct-dcm2', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ accesionnum: accNum })
+                });
+
+                let res = {};
+                try {
+                    res = await resp.json();
+                } catch {
+                    res = { message: "Invalid JSON response" };
+                }
+
+                if (resp.ok) {
+                    showAlert(`Relay accession ${accNum} berhasil`, "success");
+                    addLog(`[SUCCESS] Relay Accession ${accNum} Berhasil.`, 'info');
+                } else {
+                    showAlert(`Gagal: ${res.message}`, "danger");
+                    addLog(`[ERROR] Relay Gagal: ${res.message}`, 'error');
+                }
+
+            } catch (err) {
+                showAlert(`Network Error: ${err}`, "danger");
+                addLog(`[CRITICAL] Network Error: ${err}`, 'error');
+            }
+        });
 
 
 
-</script>
+    </script>
 
 </body>
+
 </html>

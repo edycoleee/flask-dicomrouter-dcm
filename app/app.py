@@ -115,30 +115,44 @@ def send_to_router(file_path):
 def find_dicom_by_accession(acc_num):
     """Cari Study, Series, SOP berdasarkan Accession Number."""
     url = f"{Config.DCM4CHEE_URL}/rs/studies?AccessionNumber={acc_num}"
-    resp = requests.get(url, timeout=10)
-    resp.raise_for_status()
-    studies = resp.json()
 
-    if not studies:
-        raise Exception(f"Tidak ditemukan study dengan accession {acc_num}")
+    try:
+        resp = requests.get(url, timeout=10)
 
-    study = studies[0]
-    study_uid = study["0020000D"]["Value"][0]
+        # Jika PACS mengembalikan HTML error → jangan parse JSON
+        if resp.status_code == 404 or resp.text.strip() == "":
+            return None, "Study tidak ditemukan"
 
-    # Ambil metadata lengkap untuk series + SOP
-    meta_url = f"{Config.DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
-    meta_resp = requests.get(meta_url, timeout=10)
-    meta_resp.raise_for_status()
-    meta = meta_resp.json()
+        try:
+            studies = resp.json()
+        except Exception:
+            return None, "Response PACS tidak valid (bukan JSON)"
 
-    series_uid = meta[0]["0020000E"]["Value"][0]
-    sop_uid = meta[0]["00080018"]["Value"][0]
+        if not studies:
+            return None, "Study tidak ditemukan"
 
-    return {
-        "study": study_uid,
-        "series": series_uid,
-        "sop": sop_uid
-    }
+        study_uid = studies[0]["0020000D"]["Value"][0]
+
+        # Ambil metadata lengkap
+        meta_url = f"{Config.DCM4CHEE_URL}/rs/studies/{study_uid}/metadata"
+        meta_resp = requests.get(meta_url, timeout=10)
+
+        try:
+            meta = meta_resp.json()
+        except Exception:
+            return None, "Metadata PACS tidak valid"
+
+        series_uid = meta[0]["0020000E"]["Value"][0]
+        sop_uid = meta[0]["00080018"]["Value"][0]
+
+        return {
+            "study": study_uid,
+            "series": series_uid,
+            "sop": sop_uid
+        }, None
+
+    except Exception as e:
+        return None, str(e)
 
 
 # --- API ENDPOINTS ---
@@ -247,19 +261,22 @@ class DirectDicom(Resource):
 class DirectDicom2(Resource):
     @dicom_ns.expect(api.model('Direct2', {
         'accesionnum': fields.String(required=True)
-        #'patientid': fields.String(required=False)
     }))
     def post(self):
-        """Direct kirim DICOM berdasarkan Accession Number (tanpa study UID)."""
         data = dicom_ns.payload
         acc_num = data['accesionnum']
-        #patient_id = data.get('patientid')
 
         try:
             logger.info(f"[DIRECT-DCM2] Cari DICOM berdasarkan accession={acc_num}")
 
-            # 1. Cari StudyUID, SeriesUID, SOPUID dari accession
-            meta_info = find_dicom_by_accession(acc_num)
+            # 1. Cari metadata berdasarkan accession
+            meta_info, err = find_dicom_by_accession(acc_num)
+            if err:
+                logger.warning(f"[DIRECT-DCM2] NOT FOUND: {err}")
+                return {
+                    "status": "not_found",
+                    "message": f"Accession {acc_num} tidak ditemukan"
+                }, 404
 
             study_uid = meta_info['study']
             meta = {
@@ -267,16 +284,13 @@ class DirectDicom2(Resource):
                 "sop": meta_info['sop']
             }
 
-            # 2. Tentukan file temp
+            # 2. File temp
             local_path = os.path.join(Config.TEMP_DIR, f"relay_acc_{acc_num}.dcm")
 
-            # 3. Download DICOM via helper download_wado()
+            # 3. Download
             download_wado(study_uid, meta, local_path)
 
-            # 4. Modify DICOM (opsional)
-            # modify_dicom(local_path, patient_id=patient_id, acc_num=acc_num)
-
-            # 5. Kirim ke router
+            # 4. Kirim ke router
             send_to_router(local_path)
 
             return {
@@ -293,6 +307,7 @@ class DirectDicom2(Resource):
         finally:
             if 'local_path' in locals() and os.path.exists(local_path):
                 os.remove(local_path)
+
 
 @dicom_ns.route('/imageid/<string:acsn>')
 @dicom_ns.doc(params={'acsn': 'Accession Number dari PACS/SatuSehat'})
