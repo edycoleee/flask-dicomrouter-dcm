@@ -1,0 +1,78 @@
+:root {
+    --bg-color: #f4f7f6;
+    --console-bg: #1e1e1e;
+    --console-text: #00ff00;
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.card {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    background: #fff !important;
+    font-weight: bold;
+    border-bottom: 1px solid #eee;
+}
+
+/* Log Console Style */
+.log-container {
+    background: var(--console-bg);
+    color: var(--console-text);
+    padding: 15px;
+    height: 500px;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    border-radius: 8px;
+    border: 2px solid #333;
+}
+
+.log-entry {
+    margin-bottom: 5px;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 2px;
+    line-height: 1.4;
+}
+
+.timestamp {
+    color: #888;
+    font-size: 11px;
+    margin-right: 8px;
+}
+
+/* Tab Styling */
+.nav-tabs .nav-link {
+    color: #555;
+    font-weight: 500;
+    border: none;
+    padding: 12px 15px;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom: 3px solid #0d6efd;
+    background: transparent;
+}
+
+/* Result Box SatuSehat */
+.result-box {
+    display: none;
+    background: #f8f9fa;
+    border-left: 4px solid #0dcaf0;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.btn-primary-gradient {
+    background: linear-gradient(45deg, #0d6efd, #0043a8);
+    border: none;
+}

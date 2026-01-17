@@ -7,12 +7,10 @@
 
 | Method | Endpoint                     | Payload                    | Deskripsi                                      |
 |--------|------------------------------|----------------------------|-----------------------------------------------|
-| POST   | /api/dicom/process           | study, patientid, acc      | Download, edit metadata, lalu kirim.          |
-| POST   | /api/dicom/direct-dcm        | {"study": "UID"}           | Relay murni: download & langsung kirim.       |
-| POST   | /api/dicom/direct-dcm2       | {"accesionnum": "ACSN"}    | Relay murni: download & langsung kirim.       |
+| POST   | /api/dicom/process           | study, patientid, accesionnum | Unified endpoint: dapat menggunakan Study UID atau Accession Number. Download, edit metadata (opsional), kirim SEMUA instance ke router. |
 | POST   | /api/dicom/upload            | file, patientid, acc       | Upload dari PC, edit, lalu kirim.             |
 | GET    | /api/dicom/download/{uid}    | -                          | Download ke browser (Save as file).           |
-| GET    | /api/dicom/imageid/{acsn}    | -                          | Lihar Imaging Study ID setelah kirim ke satusehat           |
+| GET    | /api/dicom/imageid/{acsn}    | -                          | Lihat Imaging Study ID setelah kirim ke satusehat           |
 
 | Code | Status        | Deskripsi                              | Penyebab Umum                                                     |
 |------|---------------|----------------------------------------|------------------------------------------------------------------|

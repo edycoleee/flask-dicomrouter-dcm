@@ -111,3 +111,107 @@ F: Association Request Failed: 0006:031c TCP Initialization Error: Connection ti
 2026-01-16 14:43:22,615 - INFO - [DIRECT-DCM2] Cari DICOM berdasarkan accession=2026100001325
 2026-01-16 14:43:22,648 - WARNING - [DIRECT-DCM2] NOT FOUND: Study tidak ditemukan
 2026-01-16 14:43:37,375 - ERROR - No ImagingStudy found for Accession Number: 202512300007
+2026-01-17 20:33:20,433 - INFO - Starting DICOM Gateway Application...
+2026-01-17 20:33:20,433 - INFO - Starting DICOM Gateway Application...
+2026-01-17 20:33:51,976 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-17 20:33:51,976 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-17 20:34:17,177 - INFO - [PROCESS] Starting unified DICOM processing
+2026-01-17 20:34:17,177 - INFO - [PROCESS] Starting unified DICOM processing
+2026-01-17 20:34:17,177 - INFO -   Study UID: None, Patient ID: None, Accession: 202512300002
+2026-01-17 20:34:17,177 - INFO -   Study UID: None, Patient ID: None, Accession: 202512300002
+2026-01-17 20:34:17,177 - INFO - [PROCESS] Finding Study UID by Accession: 202512300002
+2026-01-17 20:34:17,177 - INFO - [PROCESS] Finding Study UID by Accession: 202512300002
+2026-01-17 20:34:17,936 - WARNING - [PROCESS] Accession not found: 202512300002 - Study tidak ditemukan
+2026-01-17 20:34:17,936 - WARNING - [PROCESS] Accession not found: 202512300002 - Study tidak ditemukan
+2026-01-17 20:34:47,819 - INFO - [PROCESS] Starting unified DICOM processing
+2026-01-17 20:34:47,819 - INFO - [PROCESS] Starting unified DICOM processing
+2026-01-17 20:34:47,820 - INFO -   Study UID: None, Patient ID: None, Accession: 2026100001321
+2026-01-17 20:34:47,820 - INFO -   Study UID: None, Patient ID: None, Accession: 2026100001321
+2026-01-17 20:34:47,820 - INFO - [PROCESS] Finding Study UID by Accession: 2026100001321
+2026-01-17 20:34:47,820 - INFO - [PROCESS] Finding Study UID by Accession: 2026100001321
+2026-01-17 20:34:48,176 - INFO - [PROCESS] Found 4 instances for Study UID: 1.2.840.113619.2.415.3.839652136.763.1768259880.587
+2026-01-17 20:34:48,176 - INFO - [PROCESS] Found 4 instances for Study UID: 1.2.840.113619.2.415.3.839652136.763.1768259880.587
+2026-01-17 20:34:48,177 - INFO - [PROCESS] Processing instance 1/4
+2026-01-17 20:34:48,177 - INFO - [PROCESS] Processing instance 1/4
+2026-01-17 20:35:05,957 - INFO - [PROCESS] Instance 1 sent successfully
+2026-01-17 20:35:05,957 - INFO - [PROCESS] Instance 1 sent successfully
+2026-01-17 20:35:05,958 - INFO - [PROCESS] Processing instance 2/4
+2026-01-17 20:35:05,958 - INFO - [PROCESS] Processing instance 2/4
+2026-01-17 20:35:22,347 - INFO - [PROCESS] Instance 2 sent successfully
+2026-01-17 20:35:22,347 - INFO - [PROCESS] Instance 2 sent successfully
+2026-01-17 20:35:22,347 - INFO - [PROCESS] Processing instance 3/4
+2026-01-17 20:35:22,347 - INFO - [PROCESS] Processing instance 3/4
+2026-01-17 20:35:29,344 - INFO - [PROCESS] Instance 3 sent successfully
+2026-01-17 20:35:29,344 - INFO - [PROCESS] Instance 3 sent successfully
+2026-01-17 20:35:29,344 - INFO - [PROCESS] Processing instance 4/4
+2026-01-17 20:35:29,344 - INFO - [PROCESS] Processing instance 4/4
+2026-01-17 20:35:29,861 - INFO - [PROCESS] Instance 4 sent successfully
+2026-01-17 20:35:29,861 - INFO - [PROCESS] Instance 4 sent successfully
+2026-01-17 20:35:29,862 - INFO - [PROCESS] Completed - Success: 4/4, Failed: 0
+2026-01-17 20:35:29,862 - INFO - [PROCESS] Completed - Success: 4/4, Failed: 0
+2026-01-17 20:40:48,582 - INFO - Starting DICOM Gateway Application...
+2026-01-17 20:40:48,582 - INFO - Starting DICOM Gateway Application...
+2026-01-17 20:41:43,949 - ERROR - SatuSehat lookup failed: No ImagingStudy found for this Accession Number
+2026-01-17 20:41:43,949 - ERROR - SatuSehat lookup failed: No ImagingStudy found for this Accession Number
+2026-01-17 20:42:54,287 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-17 20:42:54,287 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-17 20:43:04,407 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-17 20:43:04,407 - INFO - ImagingStudy found: 7d1f71db-9e5d-4a11-918b-3dfcc7aca0c9
+2026-01-17 20:55:51,092 - INFO - Starting DICOM Gateway Application...
+2026-01-17 20:55:51,092 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:22:01,375 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:22:01,375 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:22:01,375 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:22:01,375 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:22:21,019 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:22:21,019 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:22:21,019 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:22:21,019 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:22:21,020 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:22:21,020 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:22:21,020 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:22:21,020 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:24:37,587 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:37,587 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:37,587 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:37,587 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:37,587 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:24:37,587 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:24:37,587 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:24:37,587 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_ORG_ID'
+2026-01-17 21:24:44,610 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:24:44,610 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:24:44,610 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:24:44,610 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:24:56,541 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:56,541 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:56,541 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:56,541 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:24:56,734 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_BASE_URL'
+2026-01-17 21:24:56,734 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_BASE_URL'
+2026-01-17 21:24:56,734 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_BASE_URL'
+2026-01-17 21:24:56,734 - ERROR - [SATUSEHAT] Unexpected error: type object 'Config' has no attribute 'SS_BASE_URL'
+2026-01-17 21:26:14,937 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:26:14,937 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:26:14,937 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:26:14,937 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:26:24,802 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:26:24,802 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:26:24,802 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:26:24,802 - INFO - [SATUSEHAT] Creating Encounter with identifier: RG2023I0000175
+2026-01-17 21:26:25,425 - ERROR - [SATUSEHAT] Failed to create Encounter: {'resourceType': 'OperationOutcome', 'text': {'status': 'generated'}, 'issue': [{'severity': 'error', 'code': 'duplicate', 'details': {'text': 'Found duplicate resource: Encounter (RuleNumber: 20002)'}}]}
+2026-01-17 21:26:25,425 - ERROR - [SATUSEHAT] Failed to create Encounter: {'resourceType': 'OperationOutcome', 'text': {'status': 'generated'}, 'issue': [{'severity': 'error', 'code': 'duplicate', 'details': {'text': 'Found duplicate resource: Encounter (RuleNumber: 20002)'}}]}
+2026-01-17 21:26:25,425 - ERROR - [SATUSEHAT] Failed to create Encounter: {'resourceType': 'OperationOutcome', 'text': {'status': 'generated'}, 'issue': [{'severity': 'error', 'code': 'duplicate', 'details': {'text': 'Found duplicate resource: Encounter (RuleNumber: 20002)'}}]}
+2026-01-17 21:26:25,425 - ERROR - [SATUSEHAT] Failed to create Encounter: {'resourceType': 'OperationOutcome', 'text': {'status': 'generated'}, 'issue': [{'severity': 'error', 'code': 'duplicate', 'details': {'text': 'Found duplicate resource: Encounter (RuleNumber: 20002)'}}]}
+2026-01-17 21:30:05,631 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:30:05,631 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:30:05,631 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:30:05,631 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:35:32,097 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:35:32,097 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:35:32,097 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:35:32,097 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:36:20,715 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:36:20,715 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:36:20,715 - INFO - Starting DICOM Gateway Application...
+2026-01-17 21:36:20,715 - INFO - Starting DICOM Gateway Application...
