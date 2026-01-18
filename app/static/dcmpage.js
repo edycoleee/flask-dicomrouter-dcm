@@ -220,8 +220,8 @@ document.getElementById('formEncounter').addEventListener('submit', async (e) =>
         identifier_value: document.getElementById('enc-identifier').value.trim(),
         subject_id: document.getElementById('enc-patient-id').value.trim(),
         subject_display: document.getElementById('enc-patient-name').value.trim(),
-        individual_id: document.getElementById('enc-practitioner-id').value.trim(),
-        individual_display: document.getElementById('enc-practitioner-name').value.trim(),
+        practitioner_id: document.getElementById('enc-practitioner-id').value.trim(),
+        practitioner_display: document.getElementById('enc-practitioner-name').value.trim(),
         period_start: convertToISO(document.getElementById('enc-period-start').value),
         period_end: convertToISO(document.getElementById('enc-period-end').value) || undefined,
         location_id: document.getElementById('enc-location-id').value.trim(),
@@ -280,4 +280,192 @@ document.getElementById('btnClearTemp').addEventListener('click', async () => {
 // Clear log console
 document.querySelector('.btn-outline-danger').addEventListener('click', () => {
     document.getElementById('logConsole').innerHTML = '';
+});
+
+// Service Request Form
+document.getElementById('formServiceRequest').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Convert datetime-local to ISO8601
+    const convertToISO = (datetimeLocal) => {
+        if (!datetimeLocal) return null;
+        const dt = new Date(datetimeLocal);
+        return dt.toISOString();
+    };
+
+    const payload = {
+        identifier_value: document.getElementById('sreq-identifier').value.trim(),
+        noacsn: document.getElementById('sreq-noacsn').value.trim(),
+        subject_id: document.getElementById('sreq-subject-id').value.trim(),
+        encounter_id: document.getElementById('sreq-encounter-id').value.trim(),
+        period_start: convertToISO(document.getElementById('sreq-period-start').value),
+        practitioner_id: document.getElementById('sreq-practitioner-id').value.trim(),
+        practitioner_display: document.getElementById('sreq-practitioner-name').value.trim(),
+        performer_id: document.getElementById('sreq-performer-id').value.trim(),
+        performer_display: document.getElementById('sreq-performer-name').value.trim()
+    };
+
+    // Remove undefined values
+    Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+
+    showAlert(`Creating Service Request: ${payload.identifier_value}`, "warning");
+    addLog(`[SERVICE-REQUEST] Creating service request with identifier: ${payload.identifier_value}`, 'warning');
+
+    try {
+        const resp = await fetch('/api/satset/service-req', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        let res = {};
+        try {
+            res = await resp.json();
+        } catch {
+            res = { message: "Invalid JSON response" };
+        }
+
+        if (resp.ok) {
+            const serviceRequestId = res.service_request_id;
+            showAlert(`Service Request created successfully: ${serviceRequestId}`, "success");
+            addLog(`[SUCCESS] Service Request created with ID: ${serviceRequestId}`, 'info');
+            document.getElementById('sreqId').innerText = serviceRequestId;
+            document.getElementById('sreqResult').style.display = 'block';
+            e.target.reset();
+        } else {
+            showAlert(`Failed: ${res.message || 'Unknown error'}`, "danger");
+            addLog(`[FAILED] ${res.message || 'Server error'}`, 'error');
+        }
+
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Gagal membuat Service Request: ${err.message}`, 'error');
+    }
+});
+
+// Observation Form
+document.getElementById('formObservation').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Convert datetime-local to ISO8601
+    const convertToISO = (datetimeLocal) => {
+        if (!datetimeLocal) return null;
+        const dt = new Date(datetimeLocal);
+        return dt.toISOString();
+    };
+
+    const payload = {
+        identifier_value: document.getElementById('obs-identifier').value.trim(),
+        codind_code: document.getElementById('obs-coding-code').value.trim(),
+        coding_display: document.getElementById('obs-coding-display').value.trim(),
+        subject_id: document.getElementById('obs-subject-id').value.trim(),
+        subject_display: document.getElementById('obs-subject-display').value.trim(),
+        encounter_id: document.getElementById('obs-encounter-id').value.trim(),
+        period_start: convertToISO(document.getElementById('obs-period-start').value),
+        performer_id: document.getElementById('obs-performer-id').value.trim(),
+        performer_display: document.getElementById('obs-performer-display').value.trim(),
+        performer_value: document.getElementById('obs-performer-value').value.trim(),
+        service_request_id: document.getElementById('obs-service-request-id').value.trim() || undefined,
+        imaging_study_id: document.getElementById('obs-imaging-study-id').value.trim() || undefined
+    };
+
+    // Remove undefined and empty values
+    Object.keys(payload).forEach(key => (!payload[key] || payload[key] === undefined) && delete payload[key]);
+
+    showAlert(`Creating Observation: ${payload.identifier_value}`, "warning");
+    addLog(`[OBSERVATION] Creating observation with identifier: ${payload.identifier_value}`, 'warning');
+
+    try {
+        const resp = await fetch('/api/satset/observation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        let res = {};
+        try {
+            res = await resp.json();
+        } catch {
+            res = { message: "Invalid JSON response" };
+        }
+
+        if (resp.ok) {
+            const observationId = res.observation_id;
+            showAlert(`Observation created successfully: ${observationId}`, "success");
+            addLog(`[SUCCESS] Observation created with ID: ${observationId}`, 'info');
+            document.getElementById('obsId').innerText = observationId;
+            document.getElementById('obsResult').style.display = 'block';
+            e.target.reset();
+        } else {
+            showAlert(`Failed: ${res.message || 'Unknown error'}`, "danger");
+            addLog(`[FAILED] ${res.message || 'Server error'}`, 'error');
+        }
+
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Gagal membuat Observation: ${err.message}`, 'error');
+    }
+});
+
+// Diagnostic Report Form
+document.getElementById('formDiagnosticReport').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Convert datetime-local to ISO8601
+    const convertToISO = (datetimeLocal) => {
+        if (!datetimeLocal) return null;
+        const dt = new Date(datetimeLocal);
+        return dt.toISOString();
+    };
+
+    const payload = {
+        identifier_value: document.getElementById('drep-identifier').value.trim(),
+        codind_code: document.getElementById('drep-coding-code').value.trim(),
+        coding_display: document.getElementById('drep-coding-display').value.trim(),
+        subject_id: document.getElementById('drep-subject-id').value.trim(),
+        encounter_id: document.getElementById('drep-encounter-id').value.trim(),
+        period_start: convertToISO(document.getElementById('drep-period-start').value),
+        performer_id: document.getElementById('drep-performer-id').value.trim(),
+        imaging_study_id: document.getElementById('drep-imaging-study-id').value.trim() || undefined,
+        observation_id: document.getElementById('drep-observation-id').value.trim() || undefined,
+        service_request_id: document.getElementById('drep-service-request-id').value.trim() || undefined,
+        conclusion_text: document.getElementById('drep-conclusion-text').value.trim() || undefined
+    };
+
+    // Remove undefined and empty values
+    Object.keys(payload).forEach(key => (!payload[key] || payload[key] === undefined) && delete payload[key]);
+
+    showAlert(`Creating Diagnostic Report: ${payload.identifier_value}`, "warning");
+    addLog(`[DIAGNOSTIC-REPORT] Creating diagnostic report with identifier: ${payload.identifier_value}`, 'warning');
+
+    try {
+        const resp = await fetch('/api/satset/diag-rep', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        let res = {};
+        try {
+            res = await resp.json();
+        } catch {
+            res = { message: "Invalid JSON response" };
+        }
+
+        if (resp.ok) {
+            const diagnosticReportId = res.diagnostic_report_id;
+            showAlert(`Diagnostic Report created successfully: ${diagnosticReportId}`, "success");
+            addLog(`[SUCCESS] Diagnostic Report created with ID: ${diagnosticReportId}`, 'info');
+            document.getElementById('drepId').innerText = diagnosticReportId;
+            document.getElementById('drepResult').style.display = 'block';
+            e.target.reset();
+        } else {
+            showAlert(`Failed: ${res.message || 'Unknown error'}`, "danger");
+            addLog(`[FAILED] ${res.message || 'Server error'}`, 'error');
+        }
+
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Gagal membuat Diagnostic Report: ${err.message}`, 'error');
+    }
 });

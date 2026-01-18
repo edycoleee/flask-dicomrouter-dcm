@@ -14,6 +14,9 @@ from services.dicom_service import DicomService
 from services.pacs_service import PACSService
 from services.imaging_service import ImagingService
 from services.encounter_service import build_encounter_resource
+from services.request_service import build_servicereq_resource
+from services.observation_service import build_observation_resource
+from services.diagnostic_service import build_diagnostic_resource
 
 logger = setup_logger()
 
@@ -41,8 +44,8 @@ encounter_input = satset_ns.model(
         "identifier_value": fields.String(description="No register / identifier value", example="RG2023I0000175"),
         "subject_id": fields.String(description="Patient ID (will be prefixed with 'Patient/')", example="P10443013727"),
         "subject_display": fields.String(description="Patient display name", example="MILA YASYFI TASBIHA"),
-        "individual_id": fields.String(description="Practitioner ID (will be prefixed with 'Practitioner/')", example="10016869420"),
-        "individual_display": fields.String(description="Practitioner display name", example="dr. ARIAWAN SETIADI, Sp.A"),
+        "practitioner_id": fields.String(description="Practitioner ID (will be prefixed with 'Practitioner/')", example="10016869420"),
+        "practitioner_display": fields.String(description="Practitioner display name", example="dr. ARIAWAN SETIADI, Sp.A"),
         "period_start": fields.String(description="Period start (ISO8601)", example="2025-08-01T05:57:41+00:00"),
         "period_end": fields.String(required=False, description="Period end (ISO8601, optional)", example="2025-08-01T06:07:41+00:00"),
         "location_id": fields.String(description="Location ID (will be prefixed with 'Location/')", example="ecff1c64-3f62-4469-b577-ea38f263b276"),
@@ -281,8 +284,8 @@ class EncounterCreate(Resource):
             identifier_value: No register / identifier value
             subject_id: Patient ID (will be prefixed with 'Patient/')
             subject_display: Patient display name
-            individual_id: Practitioner ID (will be prefixed with 'Practitioner/')
-            individual_display: Practitioner display name
+            practitioner_id: Practitioner ID (will be prefixed with 'Practitioner/')
+            practitioner_display: Practitioner display name
             period_start: Period start (ISO8601 format, required)
             period_end: Period end (ISO8601 format, optional, defaults to period_start + 10 minutes)
             location_id: Location ID (will be prefixed with 'Location/')
@@ -337,6 +340,277 @@ class EncounterCreate(Resource):
             logger.error(f"[SATUSEHAT] Unexpected error: {str(e)}")
             return {"status": "error", "message": str(e)}, 500
 
+
+
+# Define API model for ServiceRequest
+servicereq_input = satset_ns.model(
+    "ServiceRequestInput",
+    {
+        "identifier_value": fields.String(description="No register / identifier value", example="RG2023I0000176"),
+        "noacsn": fields.String(description="Accession Number (NOACSN)", example="20250002"),
+        "subject_id": fields.String(description="Patient ID (will be prefixed with 'Patient/')", example="P10443013727"),
+        "encounter_id": fields.String(description="Encounter ID (will be prefixed with 'Encounter/')", example="015aa41f-88d7-4b0b-b5f1-d511522bfa87"),
+        "period_start": fields.String(description="Occurrence datetime (ISO8601)", example="2025-08-31T15:25:00+00:00"),
+        "practitioner_id": fields.String(description="Requester reference (e.g. Practitioner/10016869420)", example="Practitioner/10016869420"),
+        "practitioner_display": fields.String(description="Requester display name", example="dr. ARIAWAN SETIADI, Sp.A"),
+        "performer_id": fields.String(description="Performer reference (e.g. Practitioner/10000504193)", example="Practitioner/10000504193"),
+        "performer_display": fields.String(description="Performer display name", example="dr. RINI SUSANTI, Sp.Rad"),
+    },
+)
+
+
+@satset_ns.route("/service-req")
+@satset_ns.expect(servicereq_input, validate=False)
+class ServiceRequestCreate(Resource):
+    """Create ServiceRequest in SatuSehat FHIR Server"""
+    
+    def post(self):
+        """
+        Create a new ServiceRequest resource in SatuSehat
+        
+        Parameters:
+            identifier_value: No register / identifier value
+            noacsn: Accession Number (NOACSN)
+            subject_id: Patient ID (will be prefixed with 'Patient/')
+            encounter_id: Encounter ID (will be prefixed with 'Encounter/')
+            period_start: Occurrence datetime (ISO8601 format)
+            practitioner_id: Requester reference (e.g. Practitioner/10016869420)
+            practitioner_display: Requester display name
+            performer_id: Performer reference (e.g. Practitioner/10000504193)
+            performer_display: Performer display name
+            
+        Returns:
+            JSON with service_request_id and created resource
+        """
+        try:
+            data = request.get_json(silent=True) or {}
+            
+            logger.info(f"[SATUSEHAT] Creating ServiceRequest with identifier: {data.get('identifier_value')}")
+            
+            # Build FHIR ServiceRequest resource
+            sreq = build_servicereq_resource(data)
+            
+            # Get access token
+            from core.fhir import fetch_token
+            token, err = fetch_token()
+            if err:
+                logger.error(f"[SATUSEHAT] Authentication failed: {err}")
+                return {"status": "error", "message": f"Authentication failed: {err}"}, 502
+            
+            # POST to SatuSehat FHIR server
+            url = Config.BASE_URL.rstrip("/") + "/ServiceRequest"
+            logger.debug(f"[SATUSEHAT] POSTing to: {url}")
+            
+            sreq_resp, status_code = post_fhir(url, token, sreq)
+            
+            if status_code >= 300:
+                logger.error(f"[SATUSEHAT] Failed to create ServiceRequest: {sreq_resp}")
+                return sreq_resp, status_code
+            
+            # Extract ServiceRequest ID from response
+            service_request_id = sreq_resp.get("id")
+            if not service_request_id:
+                logger.warning(f"[SATUSEHAT] ServiceRequest created but no ID returned")
+                return {"error": "ServiceRequest created but no ID returned", "detail": sreq_resp}, 500
+            
+            logger.info(f"[SATUSEHAT] ServiceRequest created successfully with ID: {service_request_id}")
+            
+            return {
+                "status": "success",
+                "service_request_id": service_request_id,
+                "resource": sreq_resp
+            }, 201
+            
+        except ValueError as e:
+            logger.error(f"[SATUSEHAT] Validation error: {str(e)}")
+            return {"status": "error", "message": str(e)}, 400
+        except Exception as e:
+            logger.error(f"[SATUSEHAT] Unexpected error: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+
+
+# Define API model for Observation
+observation_input = satset_ns.model(
+    "ObservationInput",
+    {
+        "identifier_value": fields.String(description="No register / identifier value", example="RG2023I0000174"),
+        "codind_code": fields.String(description="Coding code (LOINC)", example="24648-8"),
+        "coding_display": fields.String(description="Coding display text", example="XR Chest PA upright"),
+        "subject_id": fields.String(description="Patient ID (will be prefixed with 'Patient/')", example="P10443013727"),
+        "subject_display": fields.String(description="Patient display name", example="MILA YASYFI TASBIHA"),
+        "encounter_id": fields.String(description="Encounter ID (will be prefixed with 'Encounter/')", example="6dc2dc13-0b5a-4105-996e-6403e43be60a"),
+        "period_start": fields.String(description="Effective datetime (ISO8601)", example="2025-08-31T15:25:00+00:00"),
+        "performer_id": fields.String(description="Performer ID (will be prefixed with 'Practitioner/')", example="10000504193"),
+        "performer_display": fields.String(description="Performer display name", example="dr. RINI SUSANTI, Sp.Rad"),
+        "performer_value": fields.String(description="Result/Finding text", example="Hasil Bacaan adalah ..."),
+        "service_request_id": fields.String(required=False, description="ServiceRequest ID reference (optional)", example="a33163ec-ba77-4775-8d20-83035b76e668"),
+        "imaging_study_id": fields.String(required=False, description="ImagingStudy ID reference (optional)", example="75b7e9d0-c079-419c-84f8-8dba7b9cd585"),
+    },
+)
+
+
+@satset_ns.route("/observation")
+@satset_ns.expect(observation_input, validate=False)
+class ObservationCreate(Resource):
+    """Create Observation in SatuSehat FHIR Server"""
+    
+    def post(self):
+        """
+        Create a new Observation resource in SatuSehat
+        
+        Parameters:
+            identifier_value: No register / identifier value
+            codind_code: Coding code (LOINC)
+            coding_display: Coding display text
+            subject_id: Patient ID (will be prefixed with 'Patient/')
+            subject_display: Patient display name
+            encounter_id: Encounter ID (will be prefixed with 'Encounter/')
+            period_start: Effective datetime (ISO8601 format)
+            performer_id: Performer ID (will be prefixed with 'Practitioner/')
+            performer_display: Performer display name
+            performer_value: Result/Finding text
+            service_request_id: ServiceRequest ID reference (optional)
+            imaging_study_id: ImagingStudy ID reference (optional)
+            
+        Returns:
+            JSON with observation_id and created resource
+        """
+        try:
+            data = request.get_json(silent=True) or {}
+            
+            logger.info(f"[SATUSEHAT] Creating Observation with identifier: {data.get('identifier_value')}")
+            
+            # Build FHIR Observation resource
+            obs = build_observation_resource(data)
+            
+            # Get access token
+            from core.fhir import fetch_token
+            token, err = fetch_token()
+            if err:
+                logger.error(f"[SATUSEHAT] Authentication failed: {err}")
+                return {"status": "error", "message": f"Authentication failed: {err}"}, 502
+            
+            # POST to SatuSehat FHIR server
+            url = Config.BASE_URL.rstrip("/") + "/Observation"
+            logger.debug(f"[SATUSEHAT] POSTing to: {url}")
+            
+            obs_resp, status_code = post_fhir(url, token, obs)
+            
+            if status_code >= 300:
+                logger.error(f"[SATUSEHAT] Failed to create Observation: {obs_resp}")
+                return obs_resp, status_code
+            
+            # Extract Observation ID from response
+            observation_id = obs_resp.get("id")
+            if not observation_id:
+                logger.warning(f"[SATUSEHAT] Observation created but no ID returned")
+                return {"error": "Observation created but no ID returned", "detail": obs_resp}, 500
+            
+            logger.info(f"[SATUSEHAT] Observation created successfully with ID: {observation_id}")
+            
+            return {
+                "status": "success",
+                "observation_id": observation_id,
+                "resource": obs_resp
+            }, 201
+            
+        except ValueError as e:
+            logger.error(f"[SATUSEHAT] Validation error: {str(e)}")
+            return {"status": "error", "message": str(e)}, 400
+        except Exception as e:
+            logger.error(f"[SATUSEHAT] Unexpected error: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+
+
+# Define API model for DiagnosticReport
+diagnostic_input = satset_ns.model(
+    "DiagnosticReportInput",
+    {
+        "identifier_value": fields.String(description="No register / identifier value", example="RG2023I0000174"),
+        "codind_code": fields.String(description="Coding code (LOINC)", example="24648-8"),
+        "coding_display": fields.String(description="Coding display text", example="XR Chest PA upright"),
+        "subject_id": fields.String(description="Patient ID (will be prefixed with 'Patient/')", example="P10443013727"),
+        "encounter_id": fields.String(description="Encounter ID (will be prefixed with 'Encounter/')", example="6dc2dc13-0b5a-4105-996e-6403e43be60a"),
+        "period_start": fields.String(description="Effective datetime (ISO8601)", example="2025-08-31T15:25:00+00:00"),
+        "performer_id": fields.String(description="Performer ID (will be prefixed with 'Practitioner/')", example="10000504193"),
+        "imaging_study_id": fields.String(required=False, description="ImagingStudy ID reference (optional)", example="75b7e9d0-c079-419c-84f8-8dba7b9cd585"),
+        "observation_id": fields.String(required=False, description="Observation ID reference (optional)", example="82b9af58-c98d-4263-9a6f-9a04fdfec43a"),
+        "service_request_id": fields.String(required=False, description="ServiceRequest ID reference (optional)", example="a33163ec-ba77-4775-8d20-83035b76e668"),
+        "conclusion_text": fields.String(required=False, description="Conclusion/Finding text", example="Hasil Bacaan adalah Tak tampak bercak pada kedua lapangan paru"),
+    },
+)
+
+
+@satset_ns.route("/diag-rep")
+@satset_ns.expect(diagnostic_input, validate=False)
+class DiagnosticCreate(Resource):
+    """Create DiagnosticReport in SatuSehat FHIR Server"""
+    
+    def post(self):
+        """
+        Create a new DiagnosticReport resource in SatuSehat
+        
+        Parameters:
+            identifier_value: No register / identifier value
+            codind_code: Coding code (LOINC)
+            coding_display: Coding display text
+            subject_id: Patient ID (will be prefixed with 'Patient/')
+            encounter_id: Encounter ID (will be prefixed with 'Encounter/')
+            period_start: Effective datetime (ISO8601 format)
+            performer_id: Performer ID (will be prefixed with 'Practitioner/')
+            imaging_study_id: ImagingStudy ID reference (optional)
+            observation_id: Observation ID reference (optional)
+            service_request_id: ServiceRequest ID reference (optional)
+            conclusion_text: Conclusion/Finding text (optional)
+            
+        Returns:
+            JSON with diagnostic_report_id and created resource
+        """
+        try:
+            data = request.get_json(silent=True) or {}
+            
+            logger.info(f"[SATUSEHAT] Creating DiagnosticReport with identifier: {data.get('identifier_value')}")
+            
+            # Build FHIR DiagnosticReport resource
+            drep = build_diagnostic_resource(data)
+            
+            # Get access token
+            from core.fhir import fetch_token
+            token, err = fetch_token()
+            if err:
+                logger.error(f"[SATUSEHAT] Authentication failed: {err}")
+                return {"status": "error", "message": f"Authentication failed: {err}"}, 502
+            
+            # POST to SatuSehat FHIR server
+            url = Config.BASE_URL.rstrip("/") + "/DiagnosticReport"
+            logger.debug(f"[SATUSEHAT] POSTing to: {url}")
+            
+            drep_resp, status_code = post_fhir(url, token, drep)
+            
+            if status_code >= 300:
+                logger.error(f"[SATUSEHAT] Failed to create DiagnosticReport: {drep_resp}")
+                return drep_resp, status_code
+            
+            # Extract DiagnosticReport ID from response
+            diagnostic_report_id = drep_resp.get("id")
+            if not diagnostic_report_id:
+                logger.warning(f"[SATUSEHAT] DiagnosticReport created but no ID returned")
+                return {"error": "DiagnosticReport created but no ID returned", "detail": drep_resp}, 500
+            
+            logger.info(f"[SATUSEHAT] DiagnosticReport created successfully with ID: {diagnostic_report_id}")
+            
+            return {
+                "status": "success",
+                "diagnostic_report_id": diagnostic_report_id,
+                "resource": drep_resp
+            }, 201
+            
+        except ValueError as e:
+            logger.error(f"[SATUSEHAT] Validation error: {str(e)}")
+            return {"status": "error", "message": str(e)}, 400
+        except Exception as e:
+            logger.error(f"[SATUSEHAT] Unexpected error: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
 
 
 @satset_ns.route('/imageid/<string:acsn>')

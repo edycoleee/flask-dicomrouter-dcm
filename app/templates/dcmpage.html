@@ -31,11 +31,11 @@
                         <ul class="nav nav-tabs card-header-tabs" id="dicomTab" role="tablist">
                             <li class="nav-item">
                                 <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-process"><i
-                                        class="fa-solid fa-wand-magic-sparkles me-1"></i> Process (Unified)</button>
+                                        class="fa-solid fa-wand-magic-sparkles me-1"></i>3.Process DCM</button>
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-upload"><i
-                                        class="fa-solid fa-upload me-1"></i> Upload</button>
+                                        class="fa-solid fa-upload me-1"></i>Upload</button>
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i
@@ -43,11 +43,23 @@
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#satusehat"><i
-                                        class="fa-solid fa-hospital me-1"></i> SatuSehat</button>
+                                        class="fa-solid fa-hospital me-1"></i>4.GetImagingID</button>
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#encounter"><i
-                                        class="fa-solid fa-calendar me-1"></i> Encounter</button>
+                                        class="fa-solid fa-calendar me-1"></i>1.Encounter</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#service-request"><i
+                                        class="fa-solid fa-clipboard me-1"></i>2.Service Req</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#observation"><i
+                                        class="fa-solid fa-flask me-1"></i>5.Observation</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#diag-rep"><i
+                                        class="fa-solid fa-file-medical me-1"></i>6.Diagnostic Rep</button>
                             </li>
                         </ul>
                     </div>
@@ -231,6 +243,228 @@
                                 <div id="encResult" class="result-box mt-3">
                                     <strong>Encounter ID:</strong><br>
                                     <code id="encId" class="text-success"></code>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="service-request">
+                                <p class="small text-muted mb-3"><i class="fa-solid fa-lightbulb me-1 text-warning"></i>
+                                    Buat Service Request di SatuSehat FHIR Server.</p>
+                                <form id="formServiceRequest">
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">No Register</label>
+                                        <input type="text" class="form-control" id="sreq-identifier"
+                                            placeholder="RG2023I0000176" required>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Accession Number</label>
+                                            <input type="text" class="form-control" id="sreq-noacsn"
+                                                placeholder="20250002" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Patient ID</label>
+                                            <input type="text" class="form-control" id="sreq-subject-id"
+                                                placeholder="P10443013727" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Encounter ID</label>
+                                        <input type="text" class="form-control" id="sreq-encounter-id"
+                                            placeholder="015aa41f-88d7-4b0b-b5f1-d511522bfa87" required>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Occurrence DateTime (ISO8601)</label>
+                                        <input type="datetime-local" class="form-control" id="sreq-period-start" required>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Practitioner ID (Requester)</label>
+                                            <input type="text" class="form-control" id="sreq-practitioner-id"
+                                                placeholder="10016869420" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Practitioner Name</label>
+                                            <input type="text" class="form-control" id="sreq-practitioner-name"
+                                                placeholder="dr. NAMA DOKTER" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Performer ID</label>
+                                            <input type="text" class="form-control" id="sreq-performer-id"
+                                                placeholder="10000504193" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Performer Name</label>
+                                            <input type="text" class="form-control" id="sreq-performer-name"
+                                                placeholder="dr. NAMA PENUNJANG" required>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold"><i
+                                            class="fa-solid fa-check me-1"></i> CREATE SERVICE REQUEST</button>
+                                </form>
+                                <div id="sreqResult" class="result-box mt-3" style="display: none;">
+                                    <strong>Service Request ID:</strong><br>
+                                    <code id="sreqId" class="text-success"></code>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="observation">
+                                <p class="small text-muted mb-3"><i class="fa-solid fa-lightbulb me-1 text-warning"></i>
+                                    Buat Observation di SatuSehat FHIR Server.</p>
+                                <form id="formObservation">
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">No Register</label>
+                                        <input type="text" class="form-control" id="obs-identifier"
+                                            placeholder="RG2023I0000174" required>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Coding Code (LOINC)</label>
+                                            <input type="text" class="form-control" id="obs-coding-code"
+                                                placeholder="24648-8" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Coding Display</label>
+                                            <input type="text" class="form-control" id="obs-coding-display"
+                                                placeholder="XR Chest PA upright" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Patient ID</label>
+                                            <input type="text" class="form-control" id="obs-subject-id"
+                                                placeholder="P10443013727" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Patient Name</label>
+                                            <input type="text" class="form-control" id="obs-subject-display"
+                                                placeholder="NAMA PASIEN" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Encounter ID</label>
+                                            <input type="text" class="form-control" id="obs-encounter-id"
+                                                placeholder="6dc2dc13-0b5a-4105-996e-6403e43be60a" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Effective DateTime</label>
+                                            <input type="datetime-local" class="form-control" id="obs-period-start" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Performer ID</label>
+                                            <input type="text" class="form-control" id="obs-performer-id"
+                                                placeholder="10000504193" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Performer Name</label>
+                                            <input type="text" class="form-control" id="obs-performer-display"
+                                                placeholder="dr. NAMA PENUNJANG" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Result/Finding</label>
+                                        <textarea class="form-control" id="obs-performer-value" rows="3"
+                                            placeholder="Hasil Bacaan adalah ..." required></textarea>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">ServiceRequest ID (Optional)</label>
+                                            <input type="text" class="form-control" id="obs-service-request-id"
+                                                placeholder="a33163ec-ba77-4775-8d20-83035b76e668">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">ImagingStudy ID (Optional)</label>
+                                            <input type="text" class="form-control" id="obs-imaging-study-id"
+                                                placeholder="75b7e9d0-c079-419c-84f8-8dba7b9cd585">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold"><i
+                                            class="fa-solid fa-check me-1"></i> CREATE OBSERVATION</button>
+                                </form>
+                                <div id="obsResult" class="result-box mt-3" style="display: none;">
+                                    <strong>Observation ID:</strong><br>
+                                    <code id="obsId" class="text-success"></code>
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="diag-rep">
+                                <p class="small text-muted mb-3"><i class="fa-solid fa-lightbulb me-1 text-warning"></i>
+                                    Buat Diagnostic Report di SatuSehat FHIR Server.</p>
+                                <form id="formDiagnosticReport">
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">No Register</label>
+                                        <input type="text" class="form-control" id="drep-identifier"
+                                            placeholder="RG2023I0000174" required>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Coding Code (LOINC)</label>
+                                            <input type="text" class="form-control" id="drep-coding-code"
+                                                placeholder="24648-8" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Coding Display</label>
+                                            <input type="text" class="form-control" id="drep-coding-display"
+                                                placeholder="XR Chest PA upright" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Patient ID</label>
+                                            <input type="text" class="form-control" id="drep-subject-id"
+                                                placeholder="P10443013727" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Encounter ID</label>
+                                            <input type="text" class="form-control" id="drep-encounter-id"
+                                                placeholder="6dc2dc13-0b5a-4105-996e-6403e43be60a" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Effective DateTime</label>
+                                            <input type="datetime-local" class="form-control" id="drep-period-start" required>
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Performer ID</label>
+                                            <input type="text" class="form-control" id="drep-performer-id"
+                                                placeholder="10000504193" required>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">ImagingStudy ID (Optional)</label>
+                                            <input type="text" class="form-control" id="drep-imaging-study-id"
+                                                placeholder="75b7e9d0-c079-419c-84f8-8dba7b9cd585">
+                                        </div>
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">Observation ID (Optional)</label>
+                                            <input type="text" class="form-control" id="drep-observation-id"
+                                                placeholder="82b9af58-c98d-4263-9a6f-9a04fdfec43a">
+                                        </div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label class="form-label small fw-bold">ServiceRequest ID (Optional)</label>
+                                            <input type="text" class="form-control" id="drep-service-request-id"
+                                                placeholder="a33163ec-ba77-4775-8d20-83035b76e668">
+                                        </div>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label small fw-bold">Conclusion Text (Optional)</label>
+                                        <textarea class="form-control" id="drep-conclusion-text" rows="3"
+                                            placeholder="Hasil Bacaan adalah Tak tampak bercak pada kedua lapangan paru"></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold"><i
+                                            class="fa-solid fa-check me-1"></i> CREATE DIAGNOSTIC REPORT</button>
+                                </form>
+                                <div id="drepResult" class="result-box mt-3" style="display: none;">
+                                    <strong>Diagnostic Report ID:</strong><br>
+                                    <code id="drepId" class="text-success"></code>
                                 </div>
                             </div>
 
