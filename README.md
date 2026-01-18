@@ -3,24 +3,53 @@
 ![deskripsi gambar](images/alur-dcm.png)
 
 
+## ALUR PENGIRIMAN
+
+```
+1. KIRIM ENCOUNTER >> ENCOUNTER ID
+2. KIRIM SERVICE REQUEST >> SERVICE REQ ID (ACCESION NUMBER SEBAGAI KUNCI PENGIRIMAN GAMBAR DICOM)
+PENDAFTARAN ACCESION NUMBER KE SATU SEHAT
+3. KIRIM GAMBAR DICOM >> SUCCESS (ACCESION NUMBER HARUS SAMA DENGAN SERVICE REQUEST)
+4. GET IMAGE ID >> ACCESION NUMBER >> IMAGE ID
+5. KIRIM OBSERVATION (TEXT AMBIL HASIL EXPERTISE) >> OBSERVATION ID
+6. KIRIM DIAGNOSTIC REPORT (TEXT AMBIL HASIL EXPERTISE) >> DIAGNOSTIC REP ID 
+
+SEMUA BISA DILAKUKAN DI API INI 
+http://192.10.10.52:5000/ >> WEB UI UNTUK SIMULASI
+http://192.10.10.52:5000/api/docs >> API DOCUMENTATION
+http://192.10.10.52:5000/api >> API
+```
+
+
 ### 1. API SPEC
 
-| Method | Endpoint                     | Payload                    | Deskripsi                                      |
-|--------|------------------------------|----------------------------|-----------------------------------------------|
-| POST   | /api/dicom/process           | study, patientid, accesionnum | Unified endpoint: dapat menggunakan Study UID atau Accession Number. Download, edit metadata (opsional), kirim SEMUA instance ke router. |
-| POST   | /api/dicom/upload            | file, patientid, acc       | Upload dari PC, edit, lalu kirim.             |
-| GET    | /api/dicom/download/{uid}    | -                          | Download ke browser (Save as file).           |
-| GET    | /api/dicom/imageid/{acsn}    | -                          | Lihat Imaging Study ID setelah kirim ke satusehat           |
-
-| Code | Status        | Deskripsi                              | Penyebab Umum                                                     |
-|------|---------------|----------------------------------------|------------------------------------------------------------------|
-| 200  | Success       | Operasi selesai tanpa gangguan.        | -                                                                |
-| 400  | Bad Request   | Parameter input tidak lengkap / salah. | Format payload salah, field wajib tidak dikirim.                 |
-| 404  | Not Found     | Study UID tidak ditemukan di PACS.     | UID tidak ada di database PACS / salah ketik.                    |
-| 500  | Server Error  | Kesalahan pada server backend.         | Koneksi ke PACS terputus atau router (storescu) menolak koneksi. |
 
 
+| Tag            | Method | Endpoint                             | Summary                                                                | Request Body / Params                                                                                                                                                                                                                                                                                                                                           | Success Response                                                                                                                    | Error Response                                    |
+| -------------- | ------ | ------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **DICOM**      | POST   | `/dicom/process`                     | Proses DICOM (study / accession), modifikasi metadata, kirim ke Router | **Body (JSON)**<br>• `study` (string, opt)<br>• `patientid` (string, opt)<br>• `accesionnum` (string, opt)                                                                                                                                                                                                                                                      | **200 OK**<br>`status, study_uid, total_instance, sent_instance, failed_instance`<br><br>**207 Multi-Status**<br>`failed_details[]` | **400** Invalid request<br>**500** Internal error |
+| **DICOM**      | POST   | `/dicom/upload`                      | Upload file DICOM dan kirim ke Router                                  | **multipart/form-data**<br>• `file` (file, req)<br>• `patientid` (string, opt)<br>• `accesionnum` (string, opt)                                                                                                                                                                                                                                                 | **200 OK**<br>`status, file, message`                                                                                               | **400** No file selected<br>**500** Upload failed |
+| **DICOM**      | GET    | `/dicom/download/{study_uid}`        | Download DICOM dari PACS                                               | **Path Param**<br>• `study_uid` (string)                                                                                                                                                                                                                                                                                                                        | **200 OK**<br>Binary DICOM file                                                                                                     | **404** Study not found<br>**500** PACS error     |
+| **SATU-SEHAT** | POST   | `/satset/encounter`                  | Create Encounter (FHIR)                                                | **Body (JSON)**<br>• `identifier_value` (req)<br>• `subject_id` (req)<br>• `subject_display` (req)<br>• `practitioner_id` (req)<br>• `practitioner_display` (req)<br>• `period_start` (req)<br>• `period_end` (opt)<br>• `location_id` (req)<br>• `location_display` (req)                                                                                      | **201 Created**<br>`encounter_id, resource`                                                                                         | **400** Missing field<br>**502** Auth/FHIR error  |
+| **SATU-SEHAT** | POST   | `/satset/service-req`                | Create ServiceRequest (FHIR)                                           | **Body (JSON)**<br>• `identifier_value` (req)<br>• `noacsn` (req)<br>• `subject_id` (req)<br>• `encounter_id` (req)<br>• `period_start` (req)<br>• `practitioner_id` (req)<br>• `practitioner_display` (req)<br>• `performer_id` (req)<br>• `performer_display` (req)                                                                                           | **201 Created**<br>`service_request_id, resource`                                                                                   | **400** Validation error<br>**502** FHIR error    |
+| **SATU-SEHAT** | POST   | `/satset/observation`                | Create Observation (FHIR)                                              | **Body (JSON)**<br>• `identifier_value` (req)<br>• `codind_code` (req)<br>• `coding_display` (req)<br>• `subject_id` (req)<br>• `subject_display` (req)<br>• `encounter_id` (req)<br>• `period_start` (req)<br>• `performer_id` (req)<br>• `performer_display` (req)<br>• `performer_value` (req)<br>• `service_request_id` (opt)<br>• `imaging_study_id` (opt) | **201 Created**<br>`observation_id, resource`                                                                                       | **400** Invalid data<br>**502** FHIR error        |
+| **SATU-SEHAT** | POST   | `/satset/diag-rep`                   | Create DiagnosticReport (FHIR)                                         | **Body (JSON)**<br>• `identifier_value` (req)<br>• `codind_code` (req)<br>• `coding_display` (req)<br>• `subject_id` (req)<br>• `encounter_id` (req)<br>• `period_start` (req)<br>• `performer_id` (req)<br>• `imaging_study_id` (opt)<br>• `observation_id` (opt)<br>• `service_request_id` (opt)<br>• `conclusion_text` (opt)                                 | **201 Created**<br>`diagnostic_report_id, resource`                                                                                 | **400** Validation error<br>**502** FHIR error    |
+| **SATU-SEHAT** | GET    | `/satset/imageid/{accession_number}` | Get ImagingStudy ID by Accession Number                                | **Path Param**<br>• `accession_number` (string)                                                                                                                                                                                                                                                                                                                 | **200 OK**<br>`imagingStudy_id, patient_reference`                                                                                  | **404** Not found<br>**502** FHIR error           |
 
+---
+
+## 🧩 Catatan OpenAPI Style
+
+* Semua **datetime** menggunakan **ISO8601**
+* Semua **ID otomatis di-prefix** sesuai tipe resource FHIR
+* Endpoint FHIR melakukan **autentikasi sebelum request**
+* Error response **konsisten**:
+
+```json
+{ "status": "error", "message": "..." }
+```
+
+---
 DICOM Gateway API DocumentationBase URL: http://<-server-ip>:5000/api
 
 Cara Pengujian dengan cURLTest Process & Send:
@@ -39,15 +68,21 @@ curl -X POST http://localhost:5000/api/dicom/upload \
 
 WEB HTML
 
-![deskripsi gambar](images/web-proc-dcm.png)
+![deskripsi gambar](images/web-1.png)
 
-![deskripsi gambar](images/web-dir-dcm.png)
+![deskripsi gambar](images/web-2.png)
 
-![deskripsi gambar](images/web-upl-dcm.png)
+![deskripsi gambar](images/web-3.png)
 
-![deskripsi gambar](images/web-down-dcm.png)
+![deskripsi gambar](images/web-4.png)
 
-![deskripsi gambar](images/web-img-dcm.png)
+![deskripsi gambar](images/web-5.png)
+
+![deskripsi gambar](images/web-6.png)
+
+![deskripsi gambar](images/web-uploud.png)
+
+![deskripsi gambar](images/web-download.png)
 
 ### 2. SERVER PACS DCM4CHEE
 
