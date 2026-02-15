@@ -72,6 +72,19 @@ body {
     font-size: 0.9rem;
 }
 
+.result-box pre {
+    background: #fff;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    overflow-x: auto;
+}
+
+.result-box img {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+}
+
 .btn-primary-gradient {
     background: linear-gradient(45deg, #0d6efd, #0043a8);
     border: none;

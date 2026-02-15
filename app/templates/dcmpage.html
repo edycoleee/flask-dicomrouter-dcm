@@ -38,8 +38,20 @@
                                         class="fa-solid fa-upload me-1"></i>Upload</button>
                             </li>
                             <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-pacs"><i
+                                        class="fa-solid fa-server me-1"></i>PACS Ops</button>
+                            </li>
+                            <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-save"><i
                                         class="fa-solid fa-download me-1"></i> Download</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dicom-info"><i
+                                        class="fa-solid fa-database me-1"></i>DICOM Info</button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dicom-file-info"><i
+                                        class="fa-solid fa-file-waveform me-1"></i>File Info</button>
                             </li>
                             <li class="nav-item">
                                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#satusehat"><i
@@ -151,6 +163,34 @@
                                 </form>
                             </div>
 
+                            <div class="tab-pane fade" id="tab-pacs">
+                                <p class="text-muted small">Upload file ke PACS (STOW-RS) dan hapus study by UID.</p>
+
+                                <form id="formPacsUpload" class="mb-4">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">File DICOM (.dcm)</label>
+                                        <input type="file" class="form-control" id="pacs-upload-file" accept=".dcm" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 fw-bold">UPLOAD KE PACS</button>
+                                </form>
+
+                                <hr class="my-3">
+
+                                <form id="formPacsDelete">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">Study Instance UID</label>
+                                        <input type="text" class="form-control" id="pacs-delete-study"
+                                            placeholder="1.2.840...." required>
+                                    </div>
+                                    <button type="submit" class="btn btn-danger w-100 fw-bold">DELETE STUDY</button>
+                                </form>
+
+                                <div id="pacsResult" class="result-box mt-3">
+                                    <strong>Response:</strong><br>
+                                    <pre id="pacsData" class="text-dark" style="font-size: 11px; max-height: 200px; overflow-y: auto;"></pre>
+                                </div>
+                            </div>
+
                             <div class="tab-pane fade" id="tab-save">
                                 <p class="text-muted small">Ambil file dari PACS dan simpan di komputer ini.</p>
                                 <form id="formSave">
@@ -162,6 +202,59 @@
                                     <button type="submit" class="btn btn-info w-100 fw-bold text-white">DOWNLOAD KE
                                         PC</button>
                                 </form>
+                            </div>
+
+                            <div class="tab-pane fade" id="dicom-info">
+                                <p class="small text-muted mb-3"><i class="fa-solid fa-lightbulb me-1 text-warning"></i>
+                                    Query informasi DICOM dari PACS berdasarkan Accession Number.</p>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Accession Number</label>
+                                    <input type="text" id="dicominfo-acsn" class="form-control" 
+                                        placeholder="Contoh: 2026201169411">
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <button class="btn btn-info w-100" onclick="getStudyInfo()"><i 
+                                            class="fa-solid fa-search me-1"></i>Get Study</button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-warning w-100" onclick="getThumbnail()"><i 
+                                            class="fa-solid fa-image me-1"></i>Thumbnail</button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-success w-100" onclick="downloadStudy()"><i 
+                                            class="fa-solid fa-download me-1"></i>Download</button>
+                                    </div>
+                                </div>
+                                
+                                <div id="studyResult" class="result-box">
+                                    <strong>Study Information:</strong><br>
+                                    <pre id="studyData" class="text-dark" style="font-size: 11px; max-height: 300px; overflow-y: auto;"></pre>
+                                </div>
+                                
+                                <div id="thumbnailResult" class="result-box mt-3">
+                                    <strong>Thumbnail Preview:</strong><br>
+                                    <img id="thumbnailImg" class="img-fluid mt-2" style="max-height: 300px;" />
+                                </div>
+                            </div>
+
+                            <div class="tab-pane fade" id="dicom-file-info">
+                                <p class="small text-muted mb-3"><i class="fa-solid fa-lightbulb me-1 text-warning"></i>
+                                    Baca informasi Study UID, Accession Number, dan Patient ID dari file lokal.</p>
+                                <form id="formFileInfo">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold">File DICOM (.dcm)</label>
+                                        <input type="file" class="form-control" id="fileinfo-file" accept=".dcm" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-info w-100 fw-bold text-white">GET INFO</button>
+                                </form>
+
+                                <div id="fileInfoResult" class="result-box mt-3">
+                                    <strong>File Info:</strong><br>
+                                    <pre id="fileInfoData" class="text-dark" style="font-size: 11px; max-height: 200px; overflow-y: auto;"></pre>
+                                </div>
                             </div>
 
                             <div class="tab-pane fade" id="satusehat">

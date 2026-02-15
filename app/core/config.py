@@ -6,6 +6,9 @@ load_dotenv()  # Load .env file
 class Config:
     # --- DCM4CHEE ---
     DCM4CHEE_URL = os.getenv("DCM4CHEE_URL")
+    PACS_AET = os.getenv("PACS_AET", "DCM4CHEE")
+    PACS_USER = os.getenv("PACS_USER")
+    PACS_PASSWORD = os.getenv("PACS_PASSWORD")
 
     # --- ROUTER STORESCU ---
     ROUTER_IP = os.getenv("ROUTER_IP")

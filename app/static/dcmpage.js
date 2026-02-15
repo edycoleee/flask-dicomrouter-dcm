@@ -65,6 +65,172 @@ function copyToClipboard() {
         alert("ID Berhasil disalin!");
     });
 }
+// ========== DICOM INFO HANDLERS ==========
+
+// Get Study Information by Accession Number
+async function getStudyInfo() {
+    const acsn = document.getElementById('dicominfo-acsn').value.trim();
+    if (!acsn) {
+        showAlert("Masukkan Accession Number", "danger");
+        return;
+    }
+
+    addLog(`[DICOM-INFO] Getting study information for: ${acsn}`, 'warning');
+    document.getElementById('studyResult').style.display = 'none';
+
+    try {
+        const resp = await fetch(`/api/dicom/get-study/${acsn}`);
+        const data = await resp.json();
+
+        if (resp.ok) {
+            document.getElementById('studyData').textContent = JSON.stringify(data.study, null, 2);
+            document.getElementById('studyResult').style.display = 'block';
+            showAlert(`Study information retrieved successfully`, "success");
+            addLog(`[SUCCESS] Study data retrieved for accession: ${acsn}`, 'info');
+        } else {
+            showAlert(`Failed: ${data.message}`, "danger");
+            addLog(`[FAILED] ${data.message}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Failed to get study: ${err.message}`, 'error');
+    }
+}
+
+// Get Thumbnail by Accession Number
+async function getThumbnail() {
+    const acsn = document.getElementById('dicominfo-acsn').value.trim();
+    if (!acsn) {
+        showAlert("Masukkan Accession Number", "danger");
+        return;
+    }
+
+    addLog(`[DICOM-INFO] Getting thumbnail for: ${acsn}`, 'warning');
+    document.getElementById('thumbnailResult').style.display = 'none';
+
+    try {
+        const url = `/api/dicom/get-thumbnail/${acsn}`;
+        const resp = await fetch(url);
+
+        if (resp.ok) {
+            const blob = await resp.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            document.getElementById('thumbnailImg').src = imageUrl;
+            document.getElementById('thumbnailResult').style.display = 'block';
+            showAlert(`Thumbnail loaded successfully`, "success");
+            addLog(`[SUCCESS] Thumbnail retrieved for accession: ${acsn}`, 'info');
+        } else {
+            const data = await resp.json();
+            showAlert(`Failed: ${data.message}`, "danger");
+            addLog(`[FAILED] ${data.message}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Failed to get thumbnail: ${err.message}`, 'error');
+    }
+}
+
+// Download Study by Accession Number
+async function downloadStudy() {
+    const acsn = document.getElementById('dicominfo-acsn').value.trim();
+    if (!acsn) {
+        showAlert("Masukkan Accession Number", "danger");
+        return;
+    }
+
+    addLog(`[DICOM-INFO] Downloading study for: ${acsn}`, 'warning');
+    showAlert(`Downloading study: ${acsn}`, "info");
+    
+    // Direct download via link
+    window.location.href = `/api/dicom/get-image/${acsn}`;
+    
+    setTimeout(() => {
+        addLog(`[SUCCESS] Download initiated for accession: ${acsn}`, 'info');
+    }, 1000);
+}
+// ========== DICOM INFO HANDLERS ==========
+
+// Get Study Information by Accession Number
+async function getStudyInfo() {
+    const acsn = document.getElementById('dicominfo-acsn').value.trim();
+    if (!acsn) {
+        showAlert("Masukkan Accession Number", "danger");
+        return;
+    }
+
+    addLog(`[DICOM-INFO] Getting study information for: ${acsn}`, 'warning');
+    document.getElementById('studyResult').style.display = 'none';
+
+    try {
+        const resp = await fetch(`/api/dicom/get-study/${acsn}`);
+        const data = await resp.json();
+
+        if (resp.ok) {
+            document.getElementById('studyData').textContent = JSON.stringify(data.study, null, 2);
+            document.getElementById('studyResult').style.display = 'block';
+            showAlert(`Study information retrieved successfully`, "success");
+            addLog(`[SUCCESS] Study data retrieved for accession: ${acsn}`, 'info');
+        } else {
+            showAlert(`Failed: ${data.message}`, "danger");
+            addLog(`[FAILED] ${data.message}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Failed to get study: ${err.message}`, 'error');
+    }
+}
+
+// Get Thumbnail by Accession Number
+async function getThumbnail() {
+    const acsn = document.getElementById('dicominfo-acsn').value.trim();
+    if (!acsn) {
+        showAlert("Masukkan Accession Number", "danger");
+        return;
+    }
+
+    addLog(`[DICOM-INFO] Getting thumbnail for: ${acsn}`, 'warning');
+    document.getElementById('thumbnailResult').style.display = 'none';
+
+    try {
+        const url = `/api/dicom/get-thumbnail/${acsn}`;
+        const resp = await fetch(url);
+
+        if (resp.ok) {
+            const blob = await resp.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            document.getElementById('thumbnailImg').src = imageUrl;
+            document.getElementById('thumbnailResult').style.display = 'block';
+            showAlert(`Thumbnail loaded successfully`, "success");
+            addLog(`[SUCCESS] Thumbnail retrieved for accession: ${acsn}`, 'info');
+        } else {
+            const data = await resp.json();
+            showAlert(`Failed: ${data.message}`, "danger");
+            addLog(`[FAILED] ${data.message}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err.message}`, "danger");
+        addLog(`[ERROR] Failed to get thumbnail: ${err.message}`, 'error');
+    }
+}
+
+// Download Study by Accession Number
+async function downloadStudy() {
+    const acsn = document.getElementById('dicominfo-acsn').value.trim();
+    if (!acsn) {
+        showAlert("Masukkan Accession Number", "danger");
+        return;
+    }
+
+    addLog(`[DICOM-INFO] Downloading study for: ${acsn}`, 'warning');
+    showAlert(`Downloading study: ${acsn}`, "info");
+    
+    // Direct download via link
+    window.location.href = `/api/dicom/get-image/${acsn}`;
+    
+    setTimeout(() => {
+        addLog(`[SUCCESS] Download initiated for accession: ${acsn}`, 'info');
+    }, 1000);
+}
 
 // ========== FORM HANDLERS ==========
 
@@ -197,12 +363,138 @@ document.getElementById('formUpload').addEventListener('submit', async (e) => {
     }
 });
 
+// PACS Upload Form
+document.getElementById('formPacsUpload').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('pacs-upload-file');
+    if (!fileInput.files.length) {
+        showAlert("Silakan pilih file DICOM terlebih dahulu", "danger");
+        addLog(`[FAILED] Tidak ada file yang dipilih untuk PACS.`, 'error');
+        return;
+    }
+
+    const fileName = fileInput.files[0].name;
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    showAlert(`Mengunggah ke PACS: ${fileName}`, "warning");
+    addLog(`[PACS-UPLOAD] Mengunggah: ${fileName}`, 'warning');
+    document.getElementById('pacsResult').style.display = 'none';
+
+    try {
+        const resp = await fetch('/api/dicom/pacs/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await resp.json();
+        document.getElementById('pacsData').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('pacsResult').style.display = 'block';
+
+        if (resp.ok) {
+            showAlert(`Upload PACS berhasil: ${fileName}`, "success");
+            addLog(`[SUCCESS] Upload PACS berhasil.`, 'info');
+            e.target.reset();
+        } else {
+            showAlert(`Upload PACS gagal: ${data.message || 'Error'}`, "danger");
+            addLog(`[FAILED] Upload PACS gagal: ${data.message || 'Error'}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err}`, "danger");
+        addLog(`[ERROR] Gagal upload ke PACS: ${err}`, 'error');
+    }
+});
+
+// PACS Delete Form
+document.getElementById('formPacsDelete').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const studyUid = document.getElementById('pacs-delete-study').value.trim();
+    if (!studyUid) {
+        showAlert("Masukkan Study UID terlebih dahulu", "danger");
+        addLog(`[FAILED] Study UID kosong untuk delete.`, 'error');
+        return;
+    }
+
+    if (!confirm(`Hapus study dari PACS?\n${studyUid}`)) return;
+
+    showAlert(`Menghapus study: ${studyUid}`, "warning");
+    addLog(`[PACS-DELETE] Menghapus study: ${studyUid}`, 'warning');
+    document.getElementById('pacsResult').style.display = 'none';
+
+    try {
+        const resp = await fetch(`/api/dicom/pacs/studies/${encodeURIComponent(studyUid)}`, {
+            method: 'DELETE'
+        });
+
+        const data = await resp.json();
+        document.getElementById('pacsData').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('pacsResult').style.display = 'block';
+
+        if (resp.ok) {
+            showAlert(`Study berhasil dihapus.`, "success");
+            addLog(`[SUCCESS] Study dihapus: ${studyUid}`, 'info');
+            e.target.reset();
+        } else {
+            showAlert(`Delete gagal: ${data.message || 'Error'}`, "danger");
+            addLog(`[FAILED] Delete gagal: ${data.message || 'Error'}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err}`, "danger");
+        addLog(`[ERROR] Gagal delete PACS: ${err}`, 'error');
+    }
+});
+
 // Download/Save Form
 document.getElementById('formSave').addEventListener('submit', async (e) => {
     e.preventDefault();
     const studyUid = document.getElementById('save-study').value;
     addLog(`[SAVE] Menarik file dari PACS untuk download lokal...`, 'warning');
     window.location.href = `/api/dicom/download/${studyUid}`;
+});
+
+// File Info Form
+document.getElementById('formFileInfo').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fileInput = document.getElementById('fileinfo-file');
+    if (!fileInput.files.length) {
+        showAlert("Silakan pilih file DICOM terlebih dahulu", "danger");
+        addLog(`[FAILED] Tidak ada file untuk DICOM Info.`, 'error');
+        return;
+    }
+
+    const fileName = fileInput.files[0].name;
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    showAlert(`Membaca file: ${fileName}`, "warning");
+    addLog(`[DICOM-FILE] Membaca info file: ${fileName}`, 'warning');
+    document.getElementById('fileInfoResult').style.display = 'none';
+
+    try {
+        const resp = await fetch('/api/dicom/get-info', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await resp.json();
+        document.getElementById('fileInfoData').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('fileInfoResult').style.display = 'block';
+
+        if (resp.ok) {
+            showAlert(`Info file berhasil dibaca.`, "success");
+            addLog(`[SUCCESS] DICOM file info berhasil dibaca.`, 'info');
+            e.target.reset();
+        } else {
+            showAlert(`Gagal membaca info: ${data.message || 'Error'}`, "danger");
+            addLog(`[FAILED] Gagal membaca info: ${data.message || 'Error'}`, 'error');
+        }
+    } catch (err) {
+        showAlert(`Network Error: ${err}`, "danger");
+        addLog(`[ERROR] Gagal membaca info file: ${err}`, 'error');
+    }
 });
 
 // Encounter Form

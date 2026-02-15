@@ -267,3 +267,93 @@ F: Association Request Failed: 0006:031c TCP Initialization Error: Connection ti
 2026-01-18 08:00:38,769 - INFO - Starting DICOM Gateway Application...
 2026-01-18 08:00:38,769 - INFO - Starting DICOM Gateway Application...
 2026-01-18 08:00:38,769 - INFO - Starting DICOM Gateway Application...
+2026-02-15 12:53:11,919 - INFO - Starting DICOM Gateway Application...
+2026-02-15 12:53:11,919 - INFO - Starting DICOM Gateway Application...
+2026-02-15 12:53:11,919 - INFO - Starting DICOM Gateway Application...
+2026-02-15 12:53:11,919 - INFO - Starting DICOM Gateway Application...
+2026-02-15 12:53:11,919 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:04:46,051 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:04:46,051 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:04:46,051 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:04:46,051 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:04:46,051 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:05:01,911 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:05:01,911 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:05:01,911 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:05:01,911 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:05:01,911 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:06:00,827 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:06:00,827 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:06:00,827 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:06:00,827 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:06:00,827 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:06:02,472 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:06:02,472 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:06:02,472 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:06:02,472 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:06:02,472 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:07:57,338 - INFO - [DICOM INFO] Getting study for accession: 2026201169411
+2026-02-15 13:07:57,338 - INFO - [DICOM INFO] Getting study for accession: 2026201169411
+2026-02-15 13:07:57,338 - INFO - [DICOM INFO] Getting study for accession: 2026201169411
+2026-02-15 13:07:57,338 - INFO - [DICOM INFO] Getting study for accession: 2026201169411
+2026-02-15 13:07:57,338 - INFO - [DICOM INFO] Getting study for accession: 2026201169411
+2026-02-15 13:07:57,593 - INFO - Found 1 study(ies) for accession: 2026201169411
+2026-02-15 13:07:57,593 - INFO - Found 1 study(ies) for accession: 2026201169411
+2026-02-15 13:07:57,593 - INFO - Found 1 study(ies) for accession: 2026201169411
+2026-02-15 13:07:57,593 - INFO - Found 1 study(ies) for accession: 2026201169411
+2026-02-15 13:07:57,593 - INFO - Found 1 study(ies) for accession: 2026201169411
+2026-02-15 13:08:57,175 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:08:57,175 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:08:57,175 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:08:57,175 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:08:57,175 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:08:57,365 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:08:57,365 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:08:57,365 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:08:57,365 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:08:57,365 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:11:46,413 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:11:46,413 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:11:46,413 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:11:46,413 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:11:46,413 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:12:05,981 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:12:05,981 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:12:05,981 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:12:05,981 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:12:05,981 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:12:06,074 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:12:06,074 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:12:06,074 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:12:06,074 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:12:06,074 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:13:11,072 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:13:11,072 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:13:11,072 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:13:11,072 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:13:11,072 - INFO - [PACS DELETE] Deleting study: 1.2.840.113619.2.415.3.839652136.796.1770677900.891
+2026-02-15 13:13:11,193 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:13:11,193 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:13:11,193 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:13:11,193 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:13:11,193 - ERROR - [PACS DELETE] Failed with status 403: {'errorMessage': 'Deletion of Study with Rejection State: NONE not permitted'}
+2026-02-15 13:20:20,874 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:20:20,874 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:20:20,874 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:20:20,874 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:20:20,874 - INFO - Starting DICOM Gateway Application...
+2026-02-15 13:20:39,764 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:20:39,764 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:20:39,764 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:20:39,764 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:20:39,764 - INFO - [DICOM INFO] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:21:28,769 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:21:28,769 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:21:28,769 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:21:28,769 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:21:28,769 - INFO - [PACS UPLOAD] File uploaded: 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm
+2026-02-15 13:21:31,041 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:21:31,041 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:21:31,041 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:21:31,041 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS
+2026-02-15 13:21:31,041 - INFO - [PACS UPLOAD] File 1.2.840.113619.2.415.3.839652136.796.1770677900.891.dcm successfully sent to PACS

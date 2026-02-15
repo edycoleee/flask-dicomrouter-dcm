@@ -1,10 +1,39 @@
 """PACS (DCM4CHEE) Service - Handles DICOM file operations"""
 import os
+import uuid
 import requests
 from core.config import Config
 
 class PACSService:
     """Service for PACS (DCM4CHEE) operations."""
+
+    @staticmethod
+    def _get_aets_base_url():
+        base = (Config.DCM4CHEE_URL or "").rstrip("/")
+        if not base:
+            raise Exception("DCM4CHEE_URL belum dikonfigurasi")
+
+        if "/aets/" in base:
+            return base
+
+        if Config.PACS_AET:
+            return f"{base}/aets/{Config.PACS_AET}"
+
+        return base
+
+    @staticmethod
+    def _parse_response(resp):
+        try:
+            return resp.json(), resp.status_code
+        except ValueError:
+            text = (resp.text or "").strip()
+            return {"raw": text}, resp.status_code
+
+    @staticmethod
+    def _get_auth():
+        if Config.PACS_USER and Config.PACS_PASSWORD:
+            return (Config.PACS_USER, Config.PACS_PASSWORD)
+        return None
     
     @staticmethod
     def get_dicom_metadata(study_uid):
@@ -171,3 +200,49 @@ class PACSService:
 
         except Exception as e:
             return None, str(e)
+
+    @staticmethod
+    def upload_study(file_path):
+        """
+        Upload DICOM file to DCM4CHEE (STOW-RS).
+
+        Args:
+            file_path (str): Path to DICOM file
+
+        Returns:
+            tuple: (response_body, status_code)
+        """
+        aets_base = PACSService._get_aets_base_url()
+        url = f"{aets_base}/rs/studies"
+
+        boundary = f"dicom-{uuid.uuid4().hex}"
+        headers = {
+            "Content-Type": f"multipart/related; type=\"application/dicom\"; boundary={boundary}"
+        }
+
+        with open(file_path, "rb") as f:
+            dicom_bytes = f.read()
+
+        body = (
+            f"--{boundary}\r\n"
+            "Content-Type: application/dicom\r\n\r\n"
+        ).encode("utf-8") + dicom_bytes + f"\r\n--{boundary}--\r\n".encode("utf-8")
+
+        resp = requests.post(url, data=body, headers=headers, timeout=60, auth=PACSService._get_auth())
+        return PACSService._parse_response(resp)
+
+    @staticmethod
+    def delete_study(study_uid):
+        """
+        Delete DICOM study from DCM4CHEE.
+
+        Args:
+            study_uid (str): Study UID
+
+        Returns:
+            tuple: (response_body, status_code)
+        """
+        aets_base = PACSService._get_aets_base_url()
+        url = f"{aets_base}/rs/studies/{study_uid}"
+        resp = requests.delete(url, timeout=30, auth=PACSService._get_auth())
+        return PACSService._parse_response(resp)

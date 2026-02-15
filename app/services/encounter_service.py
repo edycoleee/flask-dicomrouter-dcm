@@ -15,10 +15,10 @@ def build_encounter_resource(data):
             - identifier_value: No register / identifier value
             - subject_id: Patient ID
             - subject_display: Patient display name
-            - individual_id: Practitioner ID
-            - individual_display: Practitioner display name
+            - practitioner_id: Practitioner ID
+            - practitioner_display: Practitioner display name
             - period_start: Period start (ISO8601)
-            - period_end: Period end (ISO8601, optional)
+            - period_end: Period end (ISO8601)
             - location_id: Location ID
             - location_display: Location display name
     
@@ -35,14 +35,10 @@ def build_encounter_resource(data):
     period_start = data.get("period_start")
     if not period_start:
         raise ValueError("period_start is required")
-
-    try:
-        dt_start = datetime.fromisoformat(period_start)
-    except:
-        raise ValueError("period_start must be ISO8601")
-
-    # Default period_end to 10 minutes after start
-    period_end = data.get("period_end") or (dt_start + timedelta(minutes=10)).isoformat()
+    
+    period_end = data.get("period_end")
+    if not period_end:
+        raise ValueError("period_end is required")
 
     org_id = Config.ORG_ID
 
@@ -78,8 +74,8 @@ def build_encounter_resource(data):
                     }
                 ],
                 "individual": {
-                    "reference": f"Practitioner/{data.get('individual_id')}",
-                    "display": data.get("individual_display"),
+                    "reference": f"Practitioner/{data.get('practitioner_id')}",
+                    "display": data.get("practitioner_display"),
                 },
             }
         ],

@@ -1,6 +1,7 @@
 """DICOM API Routes - Flask-RestX endpoints"""
 import os
 import requests
+import subprocess
 from datetime import datetime, timedelta
 from flask import after_this_request, send_file, request
 from flask_restx import Resource, Namespace, fields, reqparse
@@ -11,6 +12,7 @@ from core.config import Config
 from core.logger import setup_logger
 from core.fhir import post_fhir
 from services.dicom_service import DicomService
+from services.dicom_info_service import DicomInfoService
 from services.pacs_service import PACSService
 from services.imaging_service import ImagingService
 from services.encounter_service import build_encounter_resource
@@ -29,6 +31,14 @@ upload_parser = reqparse.RequestParser()
 upload_parser.add_argument('file', type=FileStorage, location='files', required=True, help='DICOM file to upload')
 upload_parser.add_argument('patientid', type=str, location='form', required=False, help='Patient ID to modify')
 upload_parser.add_argument('accesionnum', type=str, location='form', required=False, help='Accession Number to modify')
+
+# Define upload parser for PACS upload
+pacs_upload_parser = reqparse.RequestParser()
+pacs_upload_parser.add_argument('file', type=FileStorage, location='files', required=True, help='DICOM file to upload to PACS')
+
+# Define upload parser for DICOM info
+dicom_info_parser = reqparse.RequestParser()
+dicom_info_parser.add_argument('file', type=FileStorage, location='files', required=True, help='DICOM file to read metadata')
 
 # Define API models for DICOM
 dicom_model = dicom_ns.model('DicomProcess', {
@@ -239,6 +249,145 @@ class UploadDicom(Resource):
             }, 200
         except Exception as e:
             logger.error(f"[UPLOAD] Process failed: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+
+@dicom_ns.route('/pacs/upload')
+class UploadDicomToPacs(Resource):
+    """Upload local DICOM file -> Send to DCM4CHEE (PACS)"""
+
+    @dicom_ns.doc(parser=pacs_upload_parser)
+    def post(self):
+        """Upload DICOM file to DCM4CHEE (STOW-RS)"""
+        args = pacs_upload_parser.parse_args()
+
+        file = args['file']
+        if not file or file.filename == '':
+            return {"status": "error", "message": "No file selected"}, 400
+
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(Config.TEMP_DIR, f"pacs_{filename}")
+
+        try:
+            file.save(temp_path)
+            logger.info(f"[PACS UPLOAD] File uploaded: {filename}")
+
+            resp_body, status_code = PACSService.upload_study(temp_path)
+
+            if status_code >= 300:
+                logger.error(f"[PACS UPLOAD] Failed with status {status_code}: {resp_body}")
+                return {
+                    "status": "error",
+                    "pacs_status": status_code,
+                    "response": resp_body
+                }, status_code
+
+            logger.info(f"[PACS UPLOAD] File {filename} successfully sent to PACS")
+            return {
+                "status": "success",
+                "pacs_status": status_code,
+                "file": filename,
+                "response": resp_body
+            }, status_code
+        except Exception as e:
+            logger.error(f"[PACS UPLOAD] Process failed: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+
+@dicom_ns.route('/pacs/studies/<string:study_uid>')
+@dicom_ns.doc(params={'study_uid': 'Study UID (DCM4CHEE)'} )
+class DeletePacsStudy(Resource):
+    """Delete DICOM study from DCM4CHEE by Study UID"""
+
+    def delete(self, study_uid):
+        """Delete DICOM study from DCM4CHEE"""
+        try:
+            logger.info(f"[PACS DELETE] Deleting study: {study_uid}")
+            resp_body, status_code = PACSService.delete_study(study_uid)
+
+            if status_code >= 300:
+                logger.error(f"[PACS DELETE] Failed with status {status_code}: {resp_body}")
+                return {
+                    "status": "error",
+                    "pacs_status": status_code,
+                    "response": resp_body
+                }, status_code
+
+            logger.info(f"[PACS DELETE] Study deleted: {study_uid}")
+            return {
+                "status": "success",
+                "pacs_status": status_code,
+                "study_uid": study_uid,
+                "response": resp_body
+            }, status_code
+        except Exception as e:
+            logger.error(f"[PACS DELETE] Process failed: {str(e)}")
+            return {"status": "error", "message": str(e)}, 500
+
+
+@dicom_ns.route('/get-info')
+class GetDicomInfo(Resource):
+    """Get basic DICOM info from uploaded file"""
+
+    @dicom_ns.doc(parser=dicom_info_parser)
+    def post(self):
+        """Read Study UID, Accession Number, and Patient ID from DICOM file"""
+        args = dicom_info_parser.parse_args()
+
+        file = args['file']
+        if not file or file.filename == '':
+            return {"status": "error", "message": "No file selected"}, 400
+
+        filename = secure_filename(file.filename)
+        temp_path = os.path.join(Config.TEMP_DIR, f"info_{filename}")
+
+        try:
+            file.save(temp_path)
+            logger.info(f"[DICOM INFO] File uploaded: {filename}")
+
+            result = subprocess.run(
+                [
+                    "dcmdump",
+                    "+P", "0020,000D",
+                    "+P", "0008,0050",
+                    "+P", "0010,0020",
+                    temp_path
+                ],
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                raise Exception(f"dcmdump error: {result.stderr.strip()}")
+
+            def extract_tag_value(output, tag_key):
+                tag_token = f"({tag_key})"
+                for line in output.splitlines():
+                    if tag_token in line:
+                        start = line.find("[")
+                        end = line.find("]", start + 1)
+                        if start != -1 and end != -1:
+                            return line[start + 1:end]
+                return None
+
+            study_uid = extract_tag_value(result.stdout, "0020,000D")
+            accession = extract_tag_value(result.stdout, "0008,0050")
+            patient_id = extract_tag_value(result.stdout, "0010,0020")
+
+            return {
+                "status": "success",
+                "study_uid": study_uid,
+                "accession_number": accession,
+                "patient_id": patient_id
+            }, 200
+        except Exception as e:
+            logger.error(f"[DICOM INFO] Failed to read file: {str(e)}")
             return {"status": "error", "message": str(e)}, 500
         finally:
             if os.path.exists(temp_path):
@@ -635,3 +784,109 @@ class ImageId(Resource):
             "imagingStudy_id": result['imagingStudy_id'],
             "patient_reference": result['patient_reference']
         }, 200
+
+
+@dicom_ns.route('/get-study/<string:acsn>')
+@dicom_ns.doc(params={'acsn': 'Accession Number'})
+class GetStudyByAccession(Resource):
+    """Get DICOM study information by Accession Number"""
+    
+    def get(self, acsn):
+        """
+        Retrieve study information from PACS by Accession Number.
+        
+        Returns:
+            JSON with study metadata from PACS
+        """
+        try:
+            logger.info(f"[DICOM INFO] Getting study for accession: {acsn}")
+            study = DicomInfoService.get_study_by_accession(acsn)
+            
+            return {
+                "status": "success",
+                "accession_number": acsn,
+                "study": study
+            }, 200
+            
+        except Exception as e:
+            logger.error(f"[DICOM INFO] Failed to get study: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }, 404 if "No study found" in str(e) else 500
+
+
+@dicom_ns.route('/get-thumbnail/<string:acsn>')
+@dicom_ns.doc(params={'acsn': 'Accession Number'})
+class GetThumbnailByAccession(Resource):
+    """Get thumbnail image by Accession Number"""
+    
+    def get(self, acsn):
+        """
+        Retrieve thumbnail image from PACS by Accession Number.
+        
+        Returns:
+            Image file (JPEG)
+        """
+        try:
+            logger.info(f"[DICOM INFO] Getting thumbnail for accession: {acsn}")
+            thumbnail_data = DicomInfoService.get_thumbnail_by_accession(acsn)
+            
+            # Return image directly
+            from io import BytesIO
+            return send_file(
+                BytesIO(thumbnail_data),
+                mimetype='image/jpeg',
+                as_attachment=False,
+                download_name=f"thumbnail_{acsn}.jpg"
+            )
+            
+        except Exception as e:
+            logger.error(f"[DICOM INFO] Failed to get thumbnail: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }, 404 if "No study found" in str(e) else 500
+
+
+@dicom_ns.route('/get-image/<string:acsn>')
+@dicom_ns.doc(params={'acsn': 'Accession Number'})
+class DownloadStudyByAccession(Resource):
+    """Download DICOM study by Accession Number"""
+    
+    def get(self, acsn):
+        """
+        Download complete DICOM study from PACS by Accession Number.
+        
+        Returns:
+            ZIP file containing DICOM study
+        """
+        try:
+            logger.info(f"[DICOM INFO] Downloading study for accession: {acsn}")
+            file_path = DicomInfoService.download_study_by_accession(acsn)
+            
+            @after_this_request
+            def cleanup(response):
+                """Delete the temporary file after sending"""
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        logger.info(f"[DICOM INFO] Cleaned up temporary file: {file_path}")
+                except Exception as e:
+                    logger.warning(f"[DICOM INFO] Failed to cleanup file: {str(e)}")
+                return response
+            
+            # Send file as download
+            return send_file(
+                file_path,
+                mimetype='application/zip',
+                as_attachment=True,
+                download_name=f"study_{acsn}.zip"
+            )
+            
+        except Exception as e:
+            logger.error(f"[DICOM INFO] Failed to download study: {str(e)}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }, 404 if "No study found" in str(e) else 500

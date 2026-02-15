@@ -113,7 +113,105 @@ Upload file DICOM lokal, modifikasi metadata, lalu kirim ke Router.
 
 ---
 
-## 3. Download DICOM File
+## 3. Upload DICOM to PACS (STOW-RS)
+
+**Endpoint:** `POST /dicom/pacs/upload`
+
+**Description:**
+Upload file DICOM lokal ke DCM4CHEE (PACS) via STOW-RS.
+
+**Request Type:** `multipart/form-data`
+
+**Form Fields:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| file | file | Yes | DICOM file (.dcm) |
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "pacs_status": 200,
+  "file": "sample.dcm",
+  "response": {}
+}
+```
+
+**Response (4xx/5xx):**
+```json
+{
+  "status": "error",
+  "pacs_status": 403,
+  "response": {
+    "errorMessage": "..."
+  }
+}
+```
+
+---
+
+## 4. Delete Study from PACS
+
+**Endpoint:** `DELETE /dicom/pacs/studies/<study_uid>`
+
+**Description:**
+Hapus study di DCM4CHEE (PACS) berdasarkan Study UID.
+
+**Path Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| study_uid | string | Study Instance UID |
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "pacs_status": 200,
+  "study_uid": "1.2.840....",
+  "response": {}
+}
+```
+
+**Response (4xx/5xx):**
+```json
+{
+  "status": "error",
+  "pacs_status": 403,
+  "response": {
+    "errorMessage": "..."
+  }
+}
+```
+
+---
+
+## 5. Get DICOM Info from Local File
+
+**Endpoint:** `POST /dicom/get-info`
+
+**Description:**
+Baca Study UID, Accession Number, dan Patient ID dari file DICOM lokal.
+
+**Request Type:** `multipart/form-data`
+
+**Form Fields:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| file | file | Yes | DICOM file (.dcm) |
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "study_uid": "1.2.840....",
+  "accession_number": "202512300002",
+  "patient_id": "P00001349322"
+}
+```
+
+---
+
+## 6. Download DICOM File
 
 **Endpoint:** `GET /dicom/download/<study_uid>`
 
